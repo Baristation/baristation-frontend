@@ -67,6 +67,15 @@ export async function GET(
     requestHeaders.set('X-Forwarded-Port', frontendUrl.port || (isSecure ? '443' : '80'));
     requestHeaders.set('X-Forwarded-Prefix', '');
 
+    // [X-BFF 헤더 추가 — 백엔드 커스텀 요구사항]
+    const bffSecret = process.env.BFF_SECRET;
+    if (bffSecret) {
+      requestHeaders.set('X-BFF-Secret', bffSecret);
+    }
+    requestHeaders.set('X-BFF-Host', frontendUrl.host);
+    requestHeaders.set('X-BFF-Proto', frontendUrl.protocol.replace(':', ''));
+    requestHeaders.set('X-BFF-Port', frontendUrl.port || (isSecure ? '443' : '80'));
+
     // 5초 타임아웃 설정
     const response = await fetch(backendUrl, {
       method: 'GET',

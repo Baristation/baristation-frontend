@@ -16,18 +16,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    return [
-      {
-        source: '/oauth2/:path*',
-        destination: `${process.env.BACKEND_URL}/oauth2/:path*`,
-      },
-      {
-        source: '/login/oauth2/:path*',
-        destination: `${process.env.BACKEND_URL}/login/oauth2/:path*`,
-      },
-    ];
-  },
 };
 
 export default nextConfig;

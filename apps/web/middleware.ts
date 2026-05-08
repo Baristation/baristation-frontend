@@ -33,8 +33,35 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ─────────────────────────────────────────────────────────────
-  // 1. 인증 성공 환승역 처리 (/auth/success)
+  // 0. OAuth 프록시 및 보안 헤더 주입 (/login/oauth2/code/*, /oauth2/*)
   // ─────────────────────────────────────────────────────────────
+  // next.config.ts의 rewrites는 헤더 주입이 불가능하므로 미들웨어에서 처리합니다.
+  if (pathname.startsWith('/login/oauth2/code/') || pathname.startsWith('/oauth2/')) {
+    const backendUrl = process.env.BACKEND_URL;
+    if (!backendUrl) return NextResponse.next();
+
+    const targetUrl = new URL(pathname + request.nextUrl.search, backendUrl);
+    const requestHeaders = new Headers(request.headers);
+    const isSecure = request.nextUrl.protocol === 'https:';
+
+    // 보안 및 식별 헤더 주입
+    if (process.env.BFF_SECRET) {
+      requestHeaders.set('X-BFF-Secret', process.env.BFF_SECRET);
+    }
+    requestHeaders.set('X-BFF-Host', request.nextUrl.host);
+    requestHeaders.set('X-BFF-Proto', request.nextUrl.protocol.replace(':', ''));
+    requestHeaders.set('X-BFF-Port', request.nextUrl.port || (isSecure ? '443' : '80'));
+
+    // 호환성을 위한 X-Forwarded 헤더
+    requestHeaders.set('X-Forwarded-Host', request.nextUrl.host);
+    requestHeaders.set('X-Forwarded-Proto', request.nextUrl.protocol.replace(':', ''));
+
+    return NextResponse.rewrite(targetUrl, {
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
   if (pathname === '/auth/success') {
     const refreshToken = request.cookies.get('refreshToken')?.value;
 
@@ -178,8 +205,10 @@ export async function middleware(request: NextRequest) {
  */
 export const config = {
   matcher: [
-    // 환승역
+    // 환승역 및 OAuth 콜백 프록시
     '/auth/success',
+    '/login/oauth2/:path*',
+    '/oauth2/:path*',
     // Protected 경로
     '/my',
     '/my/:path*',

@@ -19,11 +19,17 @@ export async function DELETE(request: NextRequest) {
   // 현재 백엔드 로그아웃 API가 없다면 아래 코드를 주석 처리하세요.
   if (refreshToken && process.env.BACKEND_URL) {
     try {
+      const bffHeaders: Record<string, string> = {
+        Cookie: `refreshToken=${refreshToken}`,
+      };
+
+      if (process.env.BFF_SECRET) {
+        bffHeaders['X-BFF-Secret'] = process.env.BFF_SECRET;
+      }
+
       await fetch(`${process.env.BACKEND_URL}/api/auth/logout`, {
         method: 'POST',
-        headers: {
-          Cookie: `refreshToken=${refreshToken}`,
-        },
+        headers: bffHeaders,
         signal: AbortSignal.timeout(3000),
       });
     } catch (error) {
