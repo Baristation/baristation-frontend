@@ -17,6 +17,14 @@ export interface RefreshResult {
   message: string;
 }
 
+/**
+ * 백엔드 /api/auth/refresh 응답 Body 구조
+ * {
+ *   "status": "SUCCESS",
+ *   "message": "토큰 재발급 성공",
+ *   "data": { "accessToken": "..." }
+ * }
+ */
 interface BackendRefreshResponse {
   status: string;
   message: string;
@@ -30,9 +38,11 @@ export const authService = {
    * refreshToken을 사용하여 새로운 accessToken을 발급받습니다.
    *
    * [백엔드 명세]
+   * - Method: POST
+   * - Endpoint: /api/auth/refresh
    * - Request Cookie: refreshToken={jwtRefreshToken}
    * - Response Body: { status, message, data: { accessToken } }
-   * - Response Header: refreshToken (갱신된 경우)
+   * - Response Header: refreshToken={newJwtRefreshToken}
    *
    * @param refreshToken - 현재 보유한 Refresh JWT
    * @throws Error - 네트워크 오류, 백엔드 오류, 토큰 없음 등
@@ -44,28 +54,51 @@ export const authService = {
       throw new Error('[AuthService] BACKEND_URL 환경변수가 설정되지 않았습니다.');
     }
 
-    // 백엔드 토큰 재발급 엔드포인트
-    const reissueUrl = `${backendUrl}/reissue`;
+    const reissueUrl = `${backendUrl}/api/auth/refresh`;
 
-    const response = await fetch(reissueUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // refreshToken을 Cookie 헤더로 전달 (백엔드 명세)
-        Cookie: `refreshToken=${refreshToken}`,
-      },
-      // Edge Runtime에서 AbortSignal.timeout 지원 (Next.js 13.4+)
-      signal: AbortSignal.timeout(5000),
-    });
+    // [중요] 백엔드는 Request Body 없이 Cookie만으로 RT를 받습니다.
+    // Content-Type을 설정하면 백엔드가 body를 기대하게 되어 오류 발생 가능성이 있으므로 제거합니다.
+    const requestHeaders: Record<string, string> = {
+      Cookie: `refreshToken=${refreshToken}`,
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(
-        `[AuthService] 토큰 재발급 실패: ${response.status} ${response.statusText}. ${errorText}`,
-      );
+    if (process.env.BFF_SECRET) {
+      requestHeaders['X-BFF-Secret'] = process.env.BFF_SECRET;
     }
 
-    const body: BackendRefreshResponse = await response.json();
+    let response: Response;
+    try {
+      response = await fetch(reissueUrl, {
+        method: 'POST',
+        headers: requestHeaders,
+        signal: AbortSignal.timeout(5000),
+      });
+    } catch (networkError) {
+      throw new Error(`[AuthService] 네트워크 오류: ${String(networkError)}`);
+    }
+
+    if (!response.ok) {
+      let errorDetail = '';
+      try {
+        errorDetail = await response.text();
+      } catch {
+        errorDetail = '(응답 body 없음)';
+      }
+      console.error('[AuthService] 토큰 재발급 실패', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorDetail,
+        url: reissueUrl,
+      });
+      throw new Error(`[AuthService] 토큰 재발급 실패: HTTP ${response.status}. ${errorDetail}`);
+    }
+
+    let body: BackendRefreshResponse;
+    try {
+      body = await response.json();
+    } catch {
+      throw new Error('[AuthService] 응답 JSON 파싱 실패');
+    }
 
     if (body.status !== 'SUCCESS' || !body.data?.accessToken) {
       throw new Error(
@@ -73,8 +106,8 @@ export const authService = {
       );
     }
 
-    // 백엔드가 새로운 refreshToken을 응답 헤더로 보내는 경우 추출
-    const newRefreshToken = response.headers.get('refreshToken') ?? undefined;
+    // HTTP 헤더 이름은 대소문자 구분 없음 — 소문자로 조회합니다.
+    const newRefreshToken = response.headers.get('refreshtoken') ?? undefined;
 
     return {
       accessToken: body.data.accessToken,
