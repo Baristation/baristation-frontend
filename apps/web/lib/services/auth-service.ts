@@ -10,20 +10,17 @@
  * - app/api/auth/refresh/route.ts (Node.js Runtime)
  */
 
+import { BffInfo, getBffHeaders } from '@/lib/utils/bff-utils';
+
 export interface RefreshResult {
   accessToken: string;
-  /** 백엔드가 새로운 refreshToken을 응답 헤더로 돌려주는 경우 */
-  refreshToken?: string;
+  /** 백엔드가 발급한 모든 Set-Cookie 헤더 목록 */
+  setCookies: string[];
   message: string;
 }
 
 /**
  * 백엔드 /api/auth/refresh 응답 Body 구조
- * {
- *   "status": "SUCCESS",
- *   "message": "토큰 재발급 성공",
- *   "data": { "accessToken": "..." }
- * }
  */
 interface BackendRefreshResponse {
   status: string;
@@ -37,38 +34,21 @@ export const authService = {
   /**
    * refreshToken을 사용하여 새로운 accessToken을 발급받습니다.
    *
-   * [백엔드 명세]
-   * - Method: POST
-   * - Endpoint: /api/auth/refresh
-   * - Request Cookie: refreshToken={jwtRefreshToken}
-   * - Response Body: { status, message, data: { accessToken } }
-   * - Response Header: refreshToken={newJwtRefreshToken}
-   *
-   * @param refreshToken - 현재 보유한 Refresh JWT
-   * @throws Error - 네트워크 오류, 백엔드 오류, 토큰 없음 등
+   * @param cookie - 브라우저에서 전달된 Cookie 헤더 (refreshToken 포함)
+   * @param bffInfo - BFF 설정 정보
+   * @throws Error - 네트워크 오류, 백엔드 오류 등
    */
-  async refreshAccessToken(refreshToken: string): Promise<RefreshResult> {
-    const backendUrl = process.env.BACKEND_URL;
+  async refreshAccessToken(cookie: string, bffInfo: BffInfo): Promise<RefreshResult> {
+    const refreshUrl = `${bffInfo.backendUrl}/api/auth/refresh`;
 
-    if (!backendUrl) {
-      throw new Error('[AuthService] BACKEND_URL 환경변수가 설정되지 않았습니다.');
-    }
-
-    const reissueUrl = `${backendUrl}/api/auth/refresh`;
-
-    // [중요] 백엔드는 Request Body 없이 Cookie만으로 RT를 받습니다.
-    // Content-Type을 설정하면 백엔드가 body를 기대하게 되어 오류 발생 가능성이 있으므로 제거합니다.
-    const requestHeaders: Record<string, string> = {
-      Cookie: `refreshToken=${refreshToken}`,
-    };
-
-    if (process.env.BFF_SECRET) {
-      requestHeaders['X-BFF-Secret'] = process.env.BFF_SECRET;
-    }
+    const requestHeaders = getBffHeaders(bffInfo, {
+      Cookie: cookie,
+      accept: 'application/json',
+    });
 
     let response: Response;
     try {
-      response = await fetch(reissueUrl, {
+      response = await fetch(refreshUrl, {
         method: 'POST',
         headers: requestHeaders,
         signal: AbortSignal.timeout(5000),
@@ -88,7 +68,7 @@ export const authService = {
         status: response.status,
         statusText: response.statusText,
         body: errorDetail,
-        url: reissueUrl,
+        url: refreshUrl,
       });
       throw new Error(`[AuthService] 토큰 재발급 실패: HTTP ${response.status}. ${errorDetail}`);
     }
@@ -100,18 +80,18 @@ export const authService = {
       throw new Error('[AuthService] 응답 JSON 파싱 실패');
     }
 
-    if (body.status !== 'SUCCESS' || !body.data?.accessToken) {
+    if (!body.data?.accessToken) {
       throw new Error(
         `[AuthService] 백엔드 토큰 재발급 오류: ${body.message ?? '알 수 없는 오류'}`,
       );
     }
 
-    // HTTP 헤더 이름은 대소문자 구분 없음 — 소문자로 조회합니다.
-    const newRefreshToken = response.headers.get('refreshtoken') ?? undefined;
+    // 백엔드에서 내려온 모든 쿠키(토큰 회전 포함)를 캡처
+    const setCookies = response.headers.getSetCookie();
 
     return {
       accessToken: body.data.accessToken,
-      refreshToken: newRefreshToken,
+      setCookies,
       message: body.message,
     };
   },
