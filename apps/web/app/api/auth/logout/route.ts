@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { AUTH_TOKEN_KEY } from '@/lib/utils/auth-utils';
+import { getBffInfo, getBffHeaders } from '@/lib/utils/bff-utils';
 
 /**
  * DELETE /api/auth/logout
@@ -12,29 +13,25 @@ import { AUTH_TOKEN_KEY } from '@/lib/utils/auth-utils';
  */
 export async function DELETE(request: NextRequest) {
   const refreshToken = request.cookies.get('refreshToken')?.value;
+  const bffInfo = getBffInfo(request);
   const isSecure = request.nextUrl.protocol === 'https:';
 
   // [선택] 백엔드에 refreshToken 무효화 요청
   // refreshToken이 서버에서 블랙리스트 처리되어야 완전한 로그아웃이 됩니다.
-  // 현재 백엔드 로그아웃 API가 없다면 아래 코드를 주석 처리하세요.
-  if (refreshToken && process.env.BACKEND_URL) {
+  if (refreshToken && bffInfo.backendUrl) {
     try {
-      const bffHeaders: Record<string, string> = {
+      const bffHeaders = getBffHeaders(bffInfo, {
         Cookie: `refreshToken=${refreshToken}`,
-      };
+      });
 
-      if (process.env.BFF_SECRET) {
-        bffHeaders['X-BFF-Secret'] = process.env.BFF_SECRET;
-      }
-
-      await fetch(`${process.env.BACKEND_URL}/api/auth/logout`, {
+      await fetch(`${bffInfo.backendUrl}/api/auth/logout`, {
         method: 'POST',
         headers: bffHeaders,
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(5000),
       });
     } catch (error) {
       // 백엔드 로그아웃 실패는 무시 (클라이언트 쿠키는 무조건 삭제)
-      console.warn('[Logout] 백엔드 로그아웃 요청 실패:', error);
+      console.warn('[Logout API] Backend logout request failed:', error);
     }
   }
 
