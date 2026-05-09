@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { LogOut, User, Shield, Key, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 import { useAuth } from '@/hooks/use-auth';
 
@@ -14,6 +15,12 @@ import { useAuth } from '@/hooks/use-auth';
  */
 export default function MyPage() {
   const { user, isAuthenticated, isLoading, logout, revalidate } = useAuth();
+  const [isTokenPresent, setIsTokenPresent] = useState(false);
+
+  useEffect(() => {
+    // 마운트 시점에 클라이언트에서 쿠키 존재 여부 확인
+    setIsTokenPresent(document.cookie.includes('baristation-auth-token='));
+  }, []);
 
   return (
     <main className="min-h-dvh bg-[#1A1614] p-6 pt-24">
@@ -96,14 +103,7 @@ export default function MyPage() {
             <span className="font-medium text-white/80">토큰 상태 (클라이언트 기준)</span>
           </div>
           <div className="space-y-2">
-            <CookieRow
-              name="baristation-auth-token"
-              present={
-                typeof document !== 'undefined' &&
-                document.cookie.includes('baristation-auth-token=')
-              }
-              httpOnly={false}
-            />
+            <CookieRow name="baristation-auth-token" present={isTokenPresent} httpOnly={false} />
             <CookieRow
               name="refreshToken"
               present={null} // HttpOnly — JS에서 감지 불가
