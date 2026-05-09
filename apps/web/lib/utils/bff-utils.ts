@@ -83,6 +83,14 @@ export function rewriteCookieForLocal(cookie: string, isLocal: boolean): string 
 }
 
 /**
+ * 백엔드 응답에서 프론트엔드로 전달할 가공된 쿠키 목록을 가져옵니다.
+ */
+export function getProxyCookies(backendResponse: Response, isLocal: boolean): string[] {
+  const cookies = backendResponse.headers.getSetCookie();
+  return cookies.map((cookie) => rewriteCookieForLocal(cookie, isLocal));
+}
+
+/**
  * 백엔드 응답의 모든 Set-Cookie 헤더를 프론트엔드 응답으로 복사합니다.
  */
 export function proxyCookies(
@@ -90,15 +98,10 @@ export function proxyCookies(
   nextResponse: NextResponse,
   isLocal: boolean,
 ): void {
-  // Edge Runtime에서도 동작하는 getSetCookie() 사용
-  const cookies = backendResponse.headers.getSetCookie();
-
-  if (cookies.length > 0) {
-    cookies.forEach((cookie) => {
-      const fixedCookie = rewriteCookieForLocal(cookie, isLocal);
-      nextResponse.headers.append('set-cookie', fixedCookie);
-    });
-  }
+  const fixedCookies = getProxyCookies(backendResponse, isLocal);
+  fixedCookies.forEach((cookie) => {
+    nextResponse.headers.append('set-cookie', cookie);
+  });
 }
 
 /**

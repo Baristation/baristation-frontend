@@ -7,6 +7,7 @@ import {
   getBffHeaders,
   proxyCookies,
   rewriteCookieForLocal,
+  BffInfo,
 } from '@/lib/utils/bff-utils';
 
 /**
@@ -22,157 +23,153 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 /**
- * Middleware — 인증 전역 처리
+ * 0. OAuth 프록시 핸들러 (/login/oauth2/code/*, /oauth2/*)
  */
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const bffInfo = getBffInfo(request);
+async function handleOAuthProxy(request: NextRequest, bffInfo: BffInfo) {
+  const { pathname, search } = request.nextUrl;
+  const targetUrl = `${bffInfo.backendUrl}${pathname}${search}`;
+  const requestHeaders = getBffHeaders(bffInfo, request.headers);
 
-  // ─────────────────────────────────────────────────────────────
-  // 0. OAuth 프록시 (/login/oauth2/code/*, /oauth2/*)
-  // ─────────────────────────────────────────────────────────────
-  if (pathname.startsWith('/login/oauth2/code/') || pathname.startsWith('/oauth2/')) {
-    const targetUrl = `${bffInfo.backendUrl}${pathname}${request.nextUrl.search}`;
-    const requestHeaders = getBffHeaders(bffInfo, request.headers);
+  try {
+    const backendResponse = await fetch(targetUrl, {
+      method: 'GET',
+      headers: requestHeaders,
+      redirect: 'manual',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
 
-    try {
-      const backendResponse = await fetch(targetUrl, {
-        method: 'GET',
-        headers: requestHeaders,
-        redirect: 'manual',
-        cache: 'no-store',
-        signal: AbortSignal.timeout(5000),
-      });
+    // 백엔드의 리다이렉션 경로 요구사항에 따라 /auth/success로 이동
+    const res = NextResponse.redirect(new URL('/auth/success', request.url));
+    proxyCookies(backendResponse, res, bffInfo.isLocal);
+    return res;
+  } catch (error) {
+    console.error('[Middleware] OAuth Proxy Error:', error);
+    return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
+  }
+}
 
-      const res = NextResponse.redirect(new URL('/auth/success', request.url));
+/**
+ * 1. /auth/success 환승역 핸들러
+ */
+async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
+  const refreshToken = request.cookies.get('refreshToken')?.value;
 
-      // 백엔드 쿠키들을 브라우저로 전달 (로컬 대응 포함)
-      proxyCookies(backendResponse, res, bffInfo.isLocal);
-
-      return res;
-    } catch (error) {
-      console.error('[Middleware] OAuth Proxy Error:', error);
-      return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
-    }
+  if (!refreshToken) {
+    const res = NextResponse.redirect(new URL('/login?error=missing_refresh_token', request.url));
+    res.cookies.delete(AUTH_TOKEN_KEY);
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // 1. /auth/success 환승역
-  // ─────────────────────────────────────────────────────────────
-  if (pathname === '/auth/success') {
-    const refreshToken = request.cookies.get('refreshToken')?.value;
+  try {
+    const result = await authService.refreshAccessToken(
+      request.headers.get('cookie') ?? '',
+      bffInfo,
+    );
 
-    if (!refreshToken) {
-      const response = NextResponse.redirect(
-        new URL('/login?error=missing_refresh_token', request.url),
-      );
-      response.cookies.delete(AUTH_TOKEN_KEY);
-      response.cookies.delete(REDIRECT_COOKIE_KEY);
-      return response;
+    // 최종 목적지 결정
+    const rawRedirect = request.cookies.get(REDIRECT_COOKIE_KEY)?.value;
+    let redirectTo = '/';
+    if (rawRedirect) {
+      const decoded = decodeURIComponent(rawRedirect);
+      if (isValidInternalPath(decoded)) redirectTo = decoded;
     }
 
+    const res = NextResponse.redirect(new URL(redirectTo, request.url));
+
+    // 신규 토큰 및 백엔드 쿠키 설정
+    res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: !bffInfo.isLocal,
+    });
+
+    result.setCookies.forEach((cookie) => {
+      res.headers.append('set-cookie', rewriteCookieForLocal(cookie, bffInfo.isLocal));
+    });
+
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
+  } catch (error) {
+    console.error('[Middleware] Auth Success 처리 오류:', error);
+    const errorMsg = error instanceof Error ? encodeURIComponent(error.message) : 'unknown';
+    const res = NextResponse.redirect(
+      new URL(`/login?error=exchange_failed&details=${errorMsg}`, request.url),
+    );
+    res.cookies.delete(AUTH_TOKEN_KEY);
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
+  }
+}
+
+/**
+ * 2. Protected 경로 보호 핸들러
+ */
+async function handleProtectedRoute(request: NextRequest, bffInfo: BffInfo) {
+  const { pathname, search } = request.nextUrl;
+  const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+
+  if (accessToken) return NextResponse.next();
+
+  if (refreshToken) {
     try {
-      // 직접 서비스를 호출하여 토큰 교환
       const result = await authService.refreshAccessToken(
         request.headers.get('cookie') ?? '',
         bffInfo,
       );
-      const accessToken = result.accessToken;
 
-      if (!accessToken) {
-        throw new Error('No access token received from backend');
-      }
-
-      // 최종 목적지 결정
-      const rawRedirect = request.cookies.get(REDIRECT_COOKIE_KEY)?.value;
-      let redirectTo = '/';
-      if (rawRedirect) {
-        const decoded = decodeURIComponent(rawRedirect);
-        if (isValidInternalPath(decoded)) {
-          redirectTo = decoded;
-        }
-      }
-
-      const res = NextResponse.redirect(new URL(redirectTo, request.url));
-
-      // accessToken 설정
-      res.cookies.set(AUTH_TOKEN_KEY, accessToken, {
+      const res = NextResponse.next();
+      res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
         path: '/',
         maxAge: 60 * 60 * 24 * 7,
         sameSite: 'lax',
         secure: !bffInfo.isLocal,
       });
 
-      // 백엔드가 준 모든 쿠키(refreshToken 포함)를 업데이트
       result.setCookies.forEach((cookie) => {
         res.headers.append('set-cookie', rewriteCookieForLocal(cookie, bffInfo.isLocal));
       });
 
-      res.cookies.delete(REDIRECT_COOKIE_KEY);
       return res;
     } catch (error) {
-      console.error('[Middleware] /auth/success 처리 오류:', error);
-      const errorMsg = error instanceof Error ? encodeURIComponent(error.message) : 'unknown';
-      const res = NextResponse.redirect(
-        new URL(`/login?error=exchange_failed&details=${errorMsg}`, request.url),
-      );
-      res.cookies.delete(AUTH_TOKEN_KEY);
-      res.cookies.delete(REDIRECT_COOKIE_KEY);
-      return res;
+      console.warn('[Middleware] 자동 토큰 재발급 실패:', error);
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // 로그인 페이지로 리다이렉트 (목적지 저장)
+  const res = NextResponse.redirect(new URL('/login', request.url));
+  const encodedPath = encodeURIComponent(pathname + (search ?? ''));
+  res.cookies.set(REDIRECT_COOKIE_KEY, encodedPath, {
+    path: '/',
+    maxAge: 60 * 60,
+    sameSite: 'lax',
+  });
+  return res;
+}
+
+/**
+ * Middleware — 인증 전역 처리 메인
+ */
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const bffInfo = getBffInfo(request);
+
+  // 0. OAuth 프록시
+  if (pathname.startsWith('/login/oauth2/code/') || pathname.startsWith('/oauth2/')) {
+    return handleOAuthProxy(request, bffInfo);
+  }
+
+  // 1. /auth/success 환승역
+  if (pathname === '/auth/success') {
+    return handleAuthSuccess(request, bffInfo);
+  }
+
   // 2. Protected 경로 보호
-  // ─────────────────────────────────────────────────────────────
   if (isProtectedPath(pathname)) {
-    const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
-    const refreshToken = request.cookies.get('refreshToken')?.value;
-
-    if (accessToken) {
-      return NextResponse.next();
-    }
-
-    if (refreshToken) {
-      try {
-        const result = await authService.refreshAccessToken(
-          request.headers.get('cookie') ?? '',
-          bffInfo,
-        );
-
-        if (!result.accessToken) {
-          throw new Error('No access token received');
-        }
-
-        const res = NextResponse.next();
-
-        res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
-          path: '/',
-          maxAge: 60 * 60 * 24 * 7,
-          sameSite: 'lax',
-          secure: !bffInfo.isLocal,
-        });
-
-        // 백엔드가 준 모든 쿠키를 업데이트
-        result.setCookies.forEach((cookie) => {
-          res.headers.append('set-cookie', rewriteCookieForLocal(cookie, bffInfo.isLocal));
-        });
-
-        return res;
-      } catch (error) {
-        console.warn('[Middleware] Protected 경로 토큰 재발급 실패:', error);
-      }
-    }
-
-    const res = NextResponse.redirect(new URL('/login', request.url));
-    const encodedPath = encodeURIComponent(pathname + (request.nextUrl.search ?? ''));
-    res.cookies.set(REDIRECT_COOKIE_KEY, encodedPath, {
-      path: '/',
-      maxAge: 60 * 60,
-      sameSite: 'lax',
-    });
-
-    return res;
+    return handleProtectedRoute(request, bffInfo);
   }
 
   return NextResponse.next();

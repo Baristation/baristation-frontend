@@ -64,26 +64,30 @@ export const authService = {
       } catch {
         errorDetail = '(응답 body 없음)';
       }
-      console.error('[AuthService] 토큰 재발급 실패', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorDetail,
-        url: refreshUrl,
-      });
-      throw new Error(`[AuthService] 토큰 재발급 실패: HTTP ${response.status}. ${errorDetail}`);
+
+      // 구체적인 에러 로깅
+      console.error(
+        `[AuthService] 토큰 재발급 실패 | Status: ${response.status} | URL: ${refreshUrl}`,
+        {
+          statusText: response.statusText,
+          body: errorDetail,
+        },
+      );
+
+      throw new Error(`백엔드 토큰 재발급 실패 (HTTP ${response.status}): ${errorDetail}`);
     }
 
     let body: BackendRefreshResponse;
     try {
       body = await response.json();
-    } catch {
-      throw new Error('[AuthService] 응답 JSON 파싱 실패');
+    } catch (e) {
+      console.error('[AuthService] JSON 파싱 에러:', e);
+      throw new Error('백엔드 응답 데이터 형식이 올바르지 않습니다.');
     }
 
     if (!body.data?.accessToken) {
-      throw new Error(
-        `[AuthService] 백엔드 토큰 재발급 오류: ${body.message ?? '알 수 없는 오류'}`,
-      );
+      console.error('[AuthService] 액세스 토큰 누락:', body);
+      throw new Error(`토큰 발급 실패: ${body.message || '데이터 구조 오류'}`);
     }
 
     // 백엔드에서 내려온 모든 쿠키(토큰 회전 포함)를 캡처
@@ -92,7 +96,7 @@ export const authService = {
     return {
       accessToken: body.data.accessToken,
       setCookies,
-      message: body.message,
+      message: body.message || 'Success',
     };
   },
 };

@@ -5,6 +5,7 @@ import { getBffInfo, rewriteCookieForLocal } from '@/lib/utils/bff-utils';
 
 /**
  * BFF (Backend For Frontend) Token Refresh Handler
+ * - 클라이언트 앱에서 401 에러 감지 시 수동으로 호출 가능
  */
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     const cookie = request.headers.get('cookie') ?? '';
 
     if (!cookie.includes('refreshToken')) {
-      return NextResponse.json({ error: 'No refresh token found in cookies' }, { status: 401 });
+      return NextResponse.json({ error: 'Refresh token is missing in request' }, { status: 401 });
     }
 
     const result = await authService.refreshAccessToken(cookie, bffInfo);
@@ -29,11 +30,13 @@ export async function POST(request: NextRequest) {
 
     return res;
   } catch (error) {
-    console.error(`[Refresh API] Error:`, error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`[Refresh API] 토큰 갱신 실패:`, errorMsg);
+
     return NextResponse.json(
       {
         error: 'Authentication refresh failed',
-        code: 'REFRESH_BACKEND_ERROR',
+        details: errorMsg,
       },
       { status: 500 },
     );
