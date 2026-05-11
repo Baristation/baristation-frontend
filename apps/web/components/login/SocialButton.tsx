@@ -4,7 +4,7 @@ import { Button } from '@coffee-service/ui-library';
 import { motion } from 'framer-motion';
 import React from 'react';
 
-import { REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth-utils';
+import { REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth';
 
 export type SocialProvider = 'google' | 'naver' | 'kakao';
 

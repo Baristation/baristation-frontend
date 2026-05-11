@@ -2,9 +2,8 @@
 
 import { cookies } from 'next/headers';
 
-import { fetchBackend } from '@/lib/api/client';
-import { authService } from '@/lib/services/auth-service';
-import { AUTH_TOKEN_KEY } from '@/lib/utils/auth-utils';
+import { fetchBackend, refreshTokens } from '@/lib/api/backend';
+import { AUTH_TOKEN_KEY } from '@/lib/utils/auth';
 import { getMockUserInfo, User } from '@/lib/utils/user-mock';
 
 /** 백엔드 로그아웃 응답 구조 */
@@ -106,9 +105,7 @@ export interface RefreshActionResult {
  */
 export async function refreshAction(): Promise<RefreshActionResult> {
   try {
-    // authService.refreshAccessToken은 서버 사이드 환경이므로
-    // fetchBackend를 통해 자동으로 현재 쿠키를 백엔드에 전달합니다.
-    const result = await authService.refreshAccessToken();
+    const result = await refreshTokens();
 
     const cookieStore = await cookies();
     const isSecure = process.env.BFF_PROTO === 'https';

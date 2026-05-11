@@ -1,6 +1,6 @@
 'use server';
 
-import { fetchBackend } from '@/lib/api/client';
+import { fetchBackend } from '@/lib/api/backend';
 
 export interface PlaygroundResponse {
   status: number;

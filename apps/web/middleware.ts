@@ -1,27 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { fetchBackend } from '@/lib/api/client';
-import { authService } from '@/lib/services/auth-service';
-import { AUTH_TOKEN_KEY, REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth-utils';
-import { getBffInfo, proxyCookies, rewriteCookieForLocal, BffInfo } from '@/lib/utils/bff-utils';
+import { fetchBackend, refreshTokens } from '@/lib/api/backend';
+import {
+  AUTH_TOKEN_KEY,
+  REDIRECT_COOKIE_KEY,
+  isValidInternalPath,
+  proxyCookies,
+  rewriteCookieForLocal,
+} from '@/lib/utils/auth';
 
 /**
  * Protected 경로 목록
  */
 const PROTECTED_PATHS: string[] = ['/my'];
 
-/**
- * 주어진 경로가 protected 경로인지 확인
- */
 function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
 /**
+ * 요청이 로컬 개발 환경인지 확인합니다.
+ */
+function isLocalRequest(request: NextRequest): boolean {
+  const { hostname, protocol } = request.nextUrl;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || protocol === 'http:';
+}
+
+/**
  * 0. OAuth 프록시 핸들러 (/login/oauth2/code/*, /oauth2/*)
  */
-async function handleOAuthProxy(request: NextRequest, bffInfo: BffInfo) {
+async function handleOAuthProxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const isLocal = isLocalRequest(request);
 
   try {
     const backendResponse = await fetchBackend(`${pathname}${search}`, {
@@ -34,7 +44,7 @@ async function handleOAuthProxy(request: NextRequest, bffInfo: BffInfo) {
 
     // 백엔드의 리다이렉션 경로 요구사항에 따라 /auth/success로 이동
     const res = NextResponse.redirect(new URL('/auth/success', request.url));
-    proxyCookies(backendResponse, res, bffInfo.isLocal);
+    proxyCookies(backendResponse, res, isLocal);
     return res;
   } catch (error) {
     console.error('[Middleware] OAuth Proxy Error:', error);
@@ -45,8 +55,9 @@ async function handleOAuthProxy(request: NextRequest, bffInfo: BffInfo) {
 /**
  * 1. /auth/success 환승역 핸들러
  */
-async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
+async function handleAuthSuccess(request: NextRequest) {
   const refreshToken = request.cookies.get('refreshToken')?.value;
+  const isLocal = isLocalRequest(request);
 
   if (!refreshToken) {
     const res = NextResponse.redirect(new URL('/login?error=missing_refresh_token', request.url));
@@ -56,7 +67,7 @@ async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
   }
 
   try {
-    const result = await authService.refreshAccessToken(request);
+    const result = await refreshTokens(request);
 
     // 최종 목적지 결정
     const rawRedirect = request.cookies.get(REDIRECT_COOKIE_KEY)?.value;
@@ -73,11 +84,11 @@ async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
       sameSite: 'lax',
-      secure: !bffInfo.isLocal,
+      secure: !isLocal,
     });
 
     result.setCookies.forEach((cookie) => {
-      res.headers.append('set-cookie', rewriteCookieForLocal(cookie, bffInfo.isLocal));
+      res.headers.append('set-cookie', rewriteCookieForLocal(cookie, isLocal));
     });
 
     res.cookies.delete(REDIRECT_COOKIE_KEY);
@@ -97,27 +108,28 @@ async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
 /**
  * 2. Protected 경로 보호 핸들러
  */
-async function handleProtectedRoute(request: NextRequest, bffInfo: BffInfo) {
+async function handleProtectedRoute(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
+  const isLocal = isLocalRequest(request);
 
   if (accessToken) return NextResponse.next();
 
   if (refreshToken) {
     try {
-      const result = await authService.refreshAccessToken(request);
+      const result = await refreshTokens(request);
 
       const res = NextResponse.next();
       res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
         path: '/',
         maxAge: 60 * 60 * 24 * 7,
         sameSite: 'lax',
-        secure: !bffInfo.isLocal,
+        secure: !isLocal,
       });
 
       result.setCookies.forEach((cookie) => {
-        res.headers.append('set-cookie', rewriteCookieForLocal(cookie, bffInfo.isLocal));
+        res.headers.append('set-cookie', rewriteCookieForLocal(cookie, isLocal));
       });
 
       return res;
@@ -138,30 +150,54 @@ async function handleProtectedRoute(request: NextRequest, bffInfo: BffInfo) {
 }
 
 /**
+ * 3. 로그인 페이지 접근 차단 핸들러
+ * 이미 인증된 사용자가 /login에 접근하면 홈으로 리다이렉트합니다.
+ */
+function handleLoginPage(request: NextRequest): NextResponse | null {
+  const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
+  if (accessToken) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+  return null;
+}
+
+/**
  * Middleware — 인증 전역 처리 메인
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const bffInfo = getBffInfo(request);
 
   // 0. OAuth 프록시
   if (pathname.startsWith('/login/oauth2/code/') || pathname.startsWith('/oauth2/')) {
-    return handleOAuthProxy(request, bffInfo);
+    return handleOAuthProxy(request);
   }
 
   // 1. /auth/success 환승역
   if (pathname === '/auth/success') {
-    return handleAuthSuccess(request, bffInfo);
+    return handleAuthSuccess(request);
   }
 
   // 2. Protected 경로 보호
   if (isProtectedPath(pathname)) {
-    return handleProtectedRoute(request, bffInfo);
+    return handleProtectedRoute(request);
+  }
+
+  // 3. 로그인 페이지 — 인증된 사용자 차단
+  if (pathname === '/login') {
+    const redirect = handleLoginPage(request);
+    if (redirect) return redirect;
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/auth/success', '/login/oauth2/:path*', '/oauth2/:path*', '/my', '/my/:path*'],
+  matcher: [
+    '/auth/success',
+    '/login',
+    '/login/oauth2/:path*',
+    '/oauth2/:path*',
+    '/my',
+    '/my/:path*',
+  ],
 };
