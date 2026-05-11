@@ -25,12 +25,14 @@ trigger: always_on
 
 ## 2. Documentation Strategy (문서 관리 규칙)
 
-### 2.1 Specs & Records
+### 2.1 Specs & Implementation Records
 
-- **Specs 관리**: 화면 및 기능 명세서는 `specs/` 하위에 작성하며 최신 상태를 유지합니다.
+- **Specs 중심 관리**: 모든 화면 및 기능 명세는 `specs/` 하위에 작성하며, **구현 완료 즉시 변경 사항을 반영**하여 최신 상태를 유지합니다.
   - 스펙 변경 시 **반드시 결정 사유(Reason / Context)**를 함께 명시합니다.
-  - 페이지 스펙 작성 시 반드시 `specs/common-ui-spec.md`를 먼저 확인하여 디자인 토큰 및 공통 UI 패턴과의 일관성을 확보합니다. (Rule 23 준수)
-- **템플릿 준수**: 히스토리나 명세서 등 프로젝트 관리 문서 작성 시 `.agents/templates/` 및 `.agents/rules/spec-guidelines.md`의 표준 템플릿을 준수합니다.
+  - 페이지 스펙 작성 시 반드시 `specs/common-ui-spec.md`를 먼저 확인하여 디자인 토큰 및 공통 UI 패턴과의 일관성을 확보합니다.
+- **기록 채널 단일화**: 모델의 **답변**과 상세한 **Git 커밋 메시지**를 작업 이력의 주 저장소로 활용합니다.
+  - 커밋 메시지는 구현 내용, 변경된 파일, 결정 사유를 포함하여 기술합니다.
+- **PLAN.md**: 프로젝트의 전체적인 방향성과 마일스톤 관리를 위해 유지하되, 세부 변경 이력 나열은 지양합니다.
 
 ## 3. Tech Stack & Environment (기술 스택 및 환경)
 
