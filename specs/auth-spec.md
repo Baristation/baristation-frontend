@@ -58,6 +58,18 @@
 1. **자동**: 미들웨어에서 Protected 경로 접근 시 토큰이 만료되었으면 `refreshTokens(request)` 호출.
 2. **수동/폴백**: 클라이언트에서 401 발생 시 `refreshAction()` 서버 액션 호출.
 
+### 3.4 유저 정보 조회 (Server Action)
+
+1. 클라이언트가 `getUserAction()` 호출.
+2. 서버에서 쿠키의 `accessToken`으로 현재 로그인한 유저 정보를 반환 (현재 Mock 데이터 제공 중).
+3. 향후 백엔드 `/api/member/me` 연동 시 주석 처리된 백엔드 연동 코드를 해제하여 실제 데이터 사용.
+
+### 3.5 Playground 테스트 요청 (Server Action)
+
+1. 클라이언트에서 백엔드로 직접 통신하는 대신 `executePlaygroundRequest(url, method)` 서버 액션 호출.
+2. `fetchBackend`를 거쳐 서버사이드에서 안전하게 API 요청 실행.
+3. 브라우저에 BFF Secret 등 통신 설정과 헤더를 노출하지 않고 백엔드 API를 테스트하기 위한 용도.
+
 ---
 
 ## 4. 기술 스펙 및 필수 헤더
@@ -84,6 +96,7 @@
 | 케이스                  | 방식               | 위치                               |
 | :---------------------- | :----------------- | :--------------------------------- |
 | 인증/로그아웃/유저 조회 | **Server Action**  | `actions/auth.action.ts`           |
+| Playground 테스트 요청  | **Server Action**  | `actions/playground.action.ts`     |
 | OAuth 콜백 프록시       | **API Route**      | `app/api/auth/[provider]/route.ts` |
 | 전역 경로 보호/가드     | **Middleware**     | `middleware.ts`                    |
 | 백엔드 통신 유틸        | **Backend Client** | `lib/api/backend.ts`               |
