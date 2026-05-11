@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { fetchBackend, getBackendBaseUrl } from '@/lib/api/backend';
+import { fetchBackend } from '@/lib/api/backend';
 import { proxyCookies } from '@/lib/utils/auth';
 
 /**
@@ -18,14 +18,14 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid auth provider' }, { status: 400 });
   }
 
-  const backendUrl = `${getBackendBaseUrl()}/oauth2/authorization/${provider}`;
+  const backendPath = `/oauth2/authorization/${provider}`;
   const isLocal =
     request.nextUrl.hostname === 'localhost' ||
     request.nextUrl.hostname === '127.0.0.1' ||
     request.nextUrl.protocol === 'http:';
 
   try {
-    const response = await fetchBackend(backendUrl, {
+    const response = await fetchBackend(backendPath, {
       method: 'GET',
       bffRequest: request,
       redirect: 'manual',
