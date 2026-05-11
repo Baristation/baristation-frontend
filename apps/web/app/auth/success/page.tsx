@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { refreshAction } from '@/actions/auth.action';
+import { isValidInternalPath } from '@/lib/utils/auth';
 
 /**
  * AuthSuccessPage — OAuth 인증 환승역 페이지
@@ -34,7 +35,10 @@ export default function AuthSuccessPage() {
           const redirectMatch = document.cookie
             .split('; ')
             .find((row) => row.startsWith('baristation-redirect-to='));
-          const redirectTo = redirectMatch ? decodeURIComponent(redirectMatch.split('=')[1]) : '/';
+          let redirectTo = redirectMatch ? decodeURIComponent(redirectMatch.split('=')[1]) : '/';
+          if (!isValidInternalPath(redirectTo)) {
+            redirectTo = '/';
+          }
 
           router.replace(redirectTo);
         } else {

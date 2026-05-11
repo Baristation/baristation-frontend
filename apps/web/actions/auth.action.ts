@@ -50,8 +50,8 @@ export async function logoutAction(): Promise<LogoutActionResult> {
   }
 
   // 쿠키 삭제 (백엔드 성공/실패 무관)
-  cookieStore.delete(AUTH_TOKEN_KEY);
-  cookieStore.delete('refreshToken');
+  cookieStore.delete({ name: AUTH_TOKEN_KEY, path: '/' });
+  cookieStore.delete({ name: 'refreshToken', path: '/' });
 
   return { success: true, message: '로그아웃 완료' };
 }
@@ -110,17 +110,50 @@ export async function refreshAction(): Promise<RefreshActionResult> {
     const cookieStore = await cookies();
     const isSecure = process.env.BFF_PROTO === 'https';
 
+    // JWT 만료 시간 파싱
+    let maxAge = 60 * 30;
+    try {
+      const [, payloadBase64] = result.accessToken.split('.');
+      if (payloadBase64) {
+        const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        const paddingCount = (4 - (base64.length % 4)) % 4;
+        const padded = base64 + '='.repeat(paddingCount);
+        const payload = JSON.parse(atob(padded));
+        if (payload.exp) {
+          const expTime = payload.exp * 1000;
+          maxAge = Math.floor((expTime - Date.now()) / 1000);
+          if (maxAge < 0) maxAge = 0;
+        }
+      }
+    } catch (e) {
+      console.warn('[refreshAction] 토큰 파싱 에러 (기본 수명 적용):', e);
+    }
+
     // 1. 새로운 Access Token 설정
     cookieStore.set(AUTH_TOKEN_KEY, result.accessToken, {
       path: '/',
       secure: isSecure,
       sameSite: 'lax',
-      // 수명은 백엔드 설정에 따르거나 적절히 설정 (예: 30분)
-      maxAge: 60 * 30,
+      maxAge,
     });
 
-    // TODO: 백엔드에서 내려온 추가 쿠키(Set-Cookie) 처리가 필요한 경우
-    // result.setCookies 리스트를 파싱하여 cookieStore.set()으로 설정할 수 있습니다.
+    // 2. 백엔드에서 내려온 추가 쿠키(Set-Cookie) 처리
+    result.setCookies.forEach((cookieStr) => {
+      const [nameValue, ...options] = cookieStr.split(';');
+      const [name, ...valueParts] = nameValue.split('=');
+      const value = valueParts.join('=');
+
+      const cookieOptions: any = { path: '/', secure: isSecure, sameSite: 'lax' };
+      options.forEach((opt) => {
+        const [k, ...v] = opt.trim().split('=');
+        const key = k.toLowerCase();
+        if (key === 'max-age') cookieOptions.maxAge = parseInt(v[0], 10);
+        if (key === 'httponly') cookieOptions.httpOnly = true;
+      });
+
+      // 쿠키 값 설정
+      cookieStore.set(name.trim(), decodeURIComponent(value.trim()), cookieOptions);
+    });
 
     return {
       success: true,

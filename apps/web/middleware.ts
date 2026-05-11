@@ -42,10 +42,20 @@ async function handleOAuthProxy(request: NextRequest) {
       signal: AbortSignal.timeout(5000),
     });
 
-    // 백엔드의 리다이렉션 경로 요구사항에 따라 /auth/success로 이동
-    const res = NextResponse.redirect(new URL('/auth/success', request.url));
-    proxyCookies(backendResponse, res, isLocal);
-    return res;
+    if (backendResponse.status >= 200 && backendResponse.status <= 299) {
+      const res = NextResponse.redirect(new URL('/auth/success', request.url));
+      proxyCookies(backendResponse, res, isLocal);
+      return res;
+    } else if (backendResponse.status >= 300 && backendResponse.status <= 399) {
+      const location = backendResponse.headers.get('location');
+      if (location) {
+        const res = NextResponse.redirect(new URL(location, request.url));
+        proxyCookies(backendResponse, res, isLocal);
+        return res;
+      }
+    }
+
+    return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
   } catch (error) {
     console.error('[Middleware] OAuth Proxy Error:', error);
     return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
@@ -95,9 +105,8 @@ async function handleAuthSuccess(request: NextRequest) {
     return res;
   } catch (error) {
     console.error('[Middleware] Auth Success 처리 오류:', error);
-    const errorMsg = error instanceof Error ? encodeURIComponent(error.message) : 'unknown';
     const res = NextResponse.redirect(
-      new URL(`/login?error=exchange_failed&details=${errorMsg}`, request.url),
+      new URL('/login?error=exchange_failed_internal', request.url),
     );
     res.cookies.delete(AUTH_TOKEN_KEY);
     res.cookies.delete(REDIRECT_COOKIE_KEY);
@@ -135,6 +144,16 @@ async function handleProtectedRoute(request: NextRequest) {
       return res;
     } catch (error) {
       console.warn('[Middleware] 자동 토큰 재발급 실패:', error);
+      const res = NextResponse.redirect(new URL('/login', request.url));
+      res.cookies.delete(AUTH_TOKEN_KEY);
+      res.cookies.delete('refreshToken');
+      const encodedPath = encodeURIComponent(pathname + (search ?? ''));
+      res.cookies.set(REDIRECT_COOKIE_KEY, encodedPath, {
+        path: '/',
+        maxAge: 60 * 60,
+        sameSite: 'lax',
+      });
+      return res;
     }
   }
 

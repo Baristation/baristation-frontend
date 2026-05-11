@@ -42,9 +42,14 @@ function getBffInfo(request?: NextRequest): BffInfo {
 
   const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1') || proto === 'http';
 
+  const bffSecret = process.env.BFF_SECRET;
+  if (!bffSecret && typeof window === 'undefined') {
+    throw new Error('[BFF] BFF_SECRET 환경변수가 설정되지 않았습니다.');
+  }
+
   return {
     backendUrl: backendUrl.replace(/\/$/, ''),
-    bffSecret: process.env.BFF_SECRET || process.env.NEXT_PUBLIC_BFF_SECRET,
+    bffSecret,
     host,
     proto,
     port,
@@ -128,8 +133,14 @@ export async function fetchBackend(
     ...(fetchOptions.headers as Record<string, string>),
   });
 
+  if (/^https?:\/\//i.test(endpoint)) {
+    throw new Error(
+      '[BFF] 절대 URL(http:// 또는 https://)을 통한 백엔드 요청은 보안상 허용되지 않습니다.',
+    );
+  }
+
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = endpoint.startsWith('http') ? endpoint : `${bffInfo.backendUrl}${path}`;
+  const url = `${bffInfo.backendUrl}${path}`;
 
   return fetch(url, { ...fetchOptions, headers: finalHeaders });
 }

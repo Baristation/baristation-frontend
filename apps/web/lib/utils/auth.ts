@@ -1,5 +1,3 @@
-import { NextResponse } from 'next/server';
-
 /**
  * 인증 관련 상수 및 유틸리티
  *
@@ -92,7 +90,7 @@ export function getProxyCookies(backendResponse: Response, isLocal: boolean): st
  */
 export function proxyCookies(
   backendResponse: Response,
-  nextResponse: NextResponse,
+  nextResponse: Response,
   isLocal: boolean,
 ): void {
   getProxyCookies(backendResponse, isLocal).forEach((cookie) => {

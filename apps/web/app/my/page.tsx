@@ -18,9 +18,9 @@ export default function MyPage() {
   const [isTokenPresent, setIsTokenPresent] = useState(false);
 
   useEffect(() => {
-    // 마운트 시점에 클라이언트에서 쿠키 존재 여부 확인
+    // 마운트 및 인증 상태 변경 시 클라이언트에서 쿠키 존재 여부 확인
     setIsTokenPresent(document.cookie.includes('baristation-auth-token='));
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <main className="min-h-dvh bg-[#1A1614] p-6 pt-24">

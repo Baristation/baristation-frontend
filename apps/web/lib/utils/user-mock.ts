@@ -25,7 +25,8 @@ export function getMockUserInfo(token: string): User {
     if (payloadBase64) {
       // Base64URL → Base64 변환 후 디코딩
       const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
-      const padded = base64 + '=='.slice((base64.length + 2) % 3 || 0);
+      const paddingCount = (4 - (base64.length % 4)) % 4;
+      const padded = base64 + '='.repeat(paddingCount);
       const payload = JSON.parse(atob(padded));
 
       return {
