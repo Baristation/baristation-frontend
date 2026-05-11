@@ -1,97 +1,222 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { authService } from '@/lib/services/auth-service';
-import { AUTH_TOKEN_KEY, REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth-utils';
+import { fetchBackend, refreshTokens } from '@/lib/api/backend';
+import {
+  AUTH_TOKEN_KEY,
+  REDIRECT_COOKIE_KEY,
+  isValidInternalPath,
+  proxyCookies,
+  rewriteCookieForLocal,
+} from '@/lib/utils/auth';
 
 /**
- * Middleware - 인증 전역 처리
- * - /auth/success 환승역 요청을 가로채서 토큰 교환을 진행합니다.
+ * Protected 경로 목록
+ */
+const PROTECTED_PATHS: string[] = ['/my'];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+/**
+ * 요청이 로컬 개발 환경인지 확인합니다.
+ */
+function isLocalRequest(request: NextRequest): boolean {
+  const { hostname, protocol } = request.nextUrl;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || protocol === 'http:';
+}
+
+/**
+ * 0. OAuth 프록시 핸들러 (/login/oauth2/code/*, /oauth2/*)
+ */
+async function handleOAuthProxy(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  const isLocal = isLocalRequest(request);
+
+  try {
+    const backendResponse = await fetchBackend(`${pathname}${search}`, {
+      method: 'GET',
+      bffRequest: request,
+      redirect: 'manual',
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (backendResponse.status >= 200 && backendResponse.status <= 299) {
+      const res = NextResponse.redirect(new URL('/auth/success', request.url));
+      proxyCookies(backendResponse, res, isLocal);
+      return res;
+    } else if (backendResponse.status >= 300 && backendResponse.status <= 399) {
+      const location = backendResponse.headers.get('location');
+      if (location) {
+        const res = NextResponse.redirect(new URL(location, request.url));
+        proxyCookies(backendResponse, res, isLocal);
+        return res;
+      }
+    }
+
+    return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
+  } catch (error) {
+    console.error('[Middleware] OAuth Proxy Error:', error);
+    return NextResponse.redirect(new URL('/login?error=proxy_failed', request.url));
+  }
+}
+
+/**
+ * 1. /auth/success 환승역 핸들러
+ */
+async function handleAuthSuccess(request: NextRequest) {
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const isLocal = isLocalRequest(request);
+
+  if (!refreshToken) {
+    const res = NextResponse.redirect(new URL('/login?error=missing_refresh_token', request.url));
+    res.cookies.delete(AUTH_TOKEN_KEY);
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
+  }
+
+  try {
+    const result = await refreshTokens(request);
+
+    // 최종 목적지 결정
+    const rawRedirect = request.cookies.get(REDIRECT_COOKIE_KEY)?.value;
+    let redirectTo = '/';
+    if (rawRedirect) {
+      const decoded = decodeURIComponent(rawRedirect);
+      if (isValidInternalPath(decoded)) redirectTo = decoded;
+    }
+
+    const res = NextResponse.redirect(new URL(redirectTo, request.url));
+
+    // 신규 토큰 및 백엔드 쿠키 설정
+    res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: !isLocal,
+    });
+
+    result.setCookies.forEach((cookie) => {
+      res.headers.append('set-cookie', rewriteCookieForLocal(cookie, isLocal));
+    });
+
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
+  } catch (error) {
+    console.error('[Middleware] Auth Success 처리 오류:', error);
+    const res = NextResponse.redirect(
+      new URL('/login?error=exchange_failed_internal', request.url),
+    );
+    res.cookies.delete(AUTH_TOKEN_KEY);
+    res.cookies.delete(REDIRECT_COOKIE_KEY);
+    return res;
+  }
+}
+
+/**
+ * 2. Protected 경로 보호 핸들러
+ */
+async function handleProtectedRoute(request: NextRequest) {
+  const { pathname, search } = request.nextUrl;
+  const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const isLocal = isLocalRequest(request);
+
+  if (accessToken) return NextResponse.next();
+
+  if (refreshToken) {
+    try {
+      const result = await refreshTokens(request);
+
+      const res = NextResponse.next();
+      res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+        secure: !isLocal,
+      });
+
+      result.setCookies.forEach((cookie) => {
+        res.headers.append('set-cookie', rewriteCookieForLocal(cookie, isLocal));
+      });
+
+      return res;
+    } catch (error) {
+      console.warn('[Middleware] 자동 토큰 재발급 실패:', error);
+      const res = NextResponse.redirect(new URL('/login', request.url));
+      res.cookies.delete(AUTH_TOKEN_KEY);
+      res.cookies.delete('refreshToken');
+      const encodedPath = encodeURIComponent(pathname + (search ?? ''));
+      res.cookies.set(REDIRECT_COOKIE_KEY, encodedPath, {
+        path: '/',
+        maxAge: 60 * 60,
+        sameSite: 'lax',
+      });
+      return res;
+    }
+  }
+
+  // 로그인 페이지로 리다이렉트 (목적지 저장)
+  const res = NextResponse.redirect(new URL('/login', request.url));
+  const encodedPath = encodeURIComponent(pathname + (search ?? ''));
+  res.cookies.set(REDIRECT_COOKIE_KEY, encodedPath, {
+    path: '/',
+    maxAge: 60 * 60,
+    sameSite: 'lax',
+  });
+  return res;
+}
+
+/**
+ * 3. 로그인 페이지 접근 차단 핸들러
+ * 이미 인증된 사용자가 /login에 접근하면 홈으로 리다이렉트합니다.
+ */
+function handleLoginPage(request: NextRequest): NextResponse | null {
+  const accessToken = request.cookies.get(AUTH_TOKEN_KEY)?.value;
+  if (accessToken) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+  return null;
+}
+
+/**
+ * Middleware — 인증 전역 처리 메인
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. 인증 성공 환승역 처리 (/auth/success)
+  // 0. OAuth 프록시
+  if (pathname.startsWith('/login/oauth2/code/') || pathname.startsWith('/oauth2/')) {
+    return handleOAuthProxy(request);
+  }
+
+  // 1. /auth/success 환승역
   if (pathname === '/auth/success') {
-    const refreshToken = request.cookies.get('refreshToken')?.value;
+    return handleAuthSuccess(request);
+  }
 
-    // refreshToken이 없으면 로그인 페이지로 리다이렉트
-    if (!refreshToken) {
-      const response = NextResponse.redirect(
-        new URL('/login?error=missing_refresh_token', request.url),
-      );
-      response.cookies.delete(AUTH_TOKEN_KEY);
-      response.cookies.delete(REDIRECT_COOKIE_KEY);
-      return response;
-    }
+  // 2. Protected 경로 보호
+  if (isProtectedPath(pathname)) {
+    return handleProtectedRoute(request);
+  }
 
-    try {
-      // BFF API 대신 직접 서비스를 호출하여 성능 최적화 (Internal Fetch 제거)
-      const result = await authService.refreshAccessToken(refreshToken);
-      const accessToken = result.accessToken;
-
-      if (!accessToken) {
-        throw new Error('No access token received from backend');
-      }
-
-      // 최종 목적지 결정 및 검증 (오픈 리다이렉트 방지)
-      let redirectTo = request.cookies.get(REDIRECT_COOKIE_KEY)?.value || '/';
-      if (!isValidInternalPath(redirectTo)) {
-        console.warn(`[Middleware] Invalid redirect detected: ${redirectTo}. Falling back to /`);
-        redirectTo = '/';
-      }
-
-      const res = NextResponse.redirect(new URL(redirectTo, request.url));
-      const isSecure = request.nextUrl.protocol === 'https:';
-
-      // 2. Access Token을 쿠키에 설정
-      res.cookies.set(AUTH_TOKEN_KEY, accessToken, {
-        path: '/',
-        maxAge: 604800, // 7일
-        sameSite: 'lax',
-        secure: isSecure,
-      });
-
-      // 3. 새로운 refreshToken이 발급된 경우 쿠키 업데이트
-      if (result.refreshToken) {
-        res.cookies.set('refreshToken', result.refreshToken, {
-          path: '/',
-          httpOnly: true,
-          secure: isSecure,
-          sameSite: 'lax',
-          maxAge: 2592000,
-        });
-      }
-
-      // 리다이렉트용 임시 쿠키 삭제
-      res.cookies.delete(REDIRECT_COOKIE_KEY);
-
-      return res;
-    } catch (error) {
-      console.error('[Middleware] Auth Success Error:', error);
-      const errorMsg = error instanceof Error ? encodeURIComponent(error.message) : 'unknown';
-      const res = NextResponse.redirect(
-        new URL(`/login?error=exchange_failed&details=${errorMsg}`, request.url),
-      );
-      // 실패 시 인증 관련 쿠키 정리
-      res.cookies.delete(AUTH_TOKEN_KEY);
-      res.cookies.delete(REDIRECT_COOKIE_KEY);
-      return res;
-    }
+  // 3. 로그인 페이지 — 인증된 사용자 차단
+  if (pathname === '/login') {
+    const redirect = handleLoginPage(request);
+    if (redirect) return redirect;
   }
 
   return NextResponse.next();
 }
 
-/**
- * 미들웨어가 실행될 경로 설정
- */
 export const config = {
   matcher: [
     '/auth/success',
-    /*
-     * 아래와 같은 경로들도 보호가 필요하면 추가 가능
-     * '/profile/:path*',
-     * '/settings/:path*',
-     */
+    '/login',
+    '/login/oauth2/:path*',
+    '/oauth2/:path*',
+    '/my',
+    '/my/:path*',
   ],
 };

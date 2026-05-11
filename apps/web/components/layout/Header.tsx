@@ -3,15 +3,14 @@
 import { Button } from '@coffee-service/ui-library';
 import { Bookmark, User, LogOut, Home, Coffee, BookOpen } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { authUtils } from '@/lib/utils/auth-utils';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const router = useRouter();
+  const { isAuthenticated, logout } = useAuth();
 
   const pathname = usePathname();
   const isHomePage = pathname === '/';
@@ -21,18 +20,9 @@ export default function Header() {
       setIsScrolled(window.scrollY > 50);
     };
 
-    // 초기 인증 상태 확인
-    setIsAuthenticated(authUtils.isAuthenticated());
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const handleLogout = () => {
-    authUtils.removeToken();
-    setIsAuthenticated(false);
-    router.push('/login');
-  };
 
   const desktopStyles = isHomePage
     ? isScrolled
@@ -108,7 +98,7 @@ export default function Header() {
 
           {isAuthenticated ? (
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="flex flex-col items-center gap-1 hover:text-gray-900"
             >
               <LogOut className="h-5 w-5" />
@@ -134,7 +124,7 @@ export default function Header() {
           </Button>
 
           {isAuthenticated ? (
-            <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="로그아웃">
+            <Button variant="ghost" size="icon" onClick={logout} aria-label="로그아웃">
               <LogOut className="h-5 w-5" />
             </Button>
           ) : (

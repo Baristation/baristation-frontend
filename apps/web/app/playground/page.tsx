@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { executePlaygroundRequest } from '@/actions/playground.action';
+
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
 interface RequestHistory {
@@ -93,28 +95,19 @@ export default function PlaygroundPage() {
     setError(null);
     setResponse(null);
 
-    const start = Date.now();
     try {
-      const res = await fetch(url, { method });
-      const contentType = res.headers.get('content-type');
+      const result = await executePlaygroundRequest(url, method);
 
-      if (!contentType || !contentType.includes('application/json')) {
-        const textBody = await res.text();
-        throw new Error(`HTTP ${res.status} ${res.statusText}\n${textBody}`);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
-      const data = await res.json();
+      const { data } = result;
+      if (!data) throw new Error('응답 데이터가 없습니다.');
 
-      const latency = Date.now() - start;
-      setResponse({
-        status: res.status,
-        statusText: res.statusText,
-        time: `${latency}ms`,
-        body: data,
-        headers: Object.fromEntries(res.headers.entries()),
-      });
+      setResponse(data);
 
-      const images = extractImages(data, url);
+      const images = extractImages(data.body, url);
       setDetectedImages(images);
       if (images.length > 0) setViewMode('visual');
       else setViewMode('json');
@@ -124,7 +117,7 @@ export default function PlaygroundPage() {
         url,
         method,
         timestamp: Date.now(),
-        status: res.status,
+        status: data.status,
       };
       saveHistory([newHistoryItem, ...history]);
     } catch (e: any) {

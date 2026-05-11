@@ -1,5 +1,10 @@
 /**
- * Mock User Utility - 백엔드 API 부재 시 가상 유저 정보를 제공합니다.
+ * 개발/하네스 단계용 목업 유저 유틸리티
+ *
+ * 실제 백엔드 유저 정보 API가 연동되기 전까지
+ * accessToken을 기반으로 임시 유저 정보를 생성합니다.
+ *
+ * TODO: 실제 /api/user/me 연동 시 이 파일을 교체하세요.
  */
 
 export interface User {
@@ -9,22 +14,37 @@ export interface User {
   avatarUrl?: string;
 }
 
-export const MOCK_USER: User = {
-  id: 'user_01',
-  name: '재현',
-  email: 'jaehyeon@example.com',
-  // Offline 환경 지원을 위해 인라인 데이터 URI (기본 유저 아이콘) 사용
-  avatarUrl:
-    'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNhYWFhYWEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTkgMjF2LTJhNCA0IDAgMCAwLTQtNEg5YTQgNCAwIDAgMC00IDJ2MiIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iNyIgcj0iNCIvPjwvc3ZnPg==',
-};
-
 /**
- * 토큰 유효성 검증 및 유저 정보 반환 시뮬레이션
+ * accessToken에서 간단한 목업 유저 정보를 생성합니다.
+ * JWT payload를 직접 파싱하거나, 토큰이 있으면 기본 유저 반환.
  */
-export const getMockUserInfo = (token: string | null): User | null => {
-  if (!token) return null;
+export function getMockUserInfo(token: string): User {
+  // JWT payload를 간단히 파싱 시도 (서명 검증 없음 — 클라이언트 표시 전용)
+  try {
+    const [, payloadBase64] = token.split('.');
+    if (payloadBase64) {
+      // Base64URL → Base64 변환 후 디코딩
+      const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const paddingCount = (4 - (base64.length % 4)) % 4;
+      const padded = base64 + '='.repeat(paddingCount);
+      const payload = JSON.parse(atob(padded));
 
-  // 실제 서비스에서는 토큰 디코딩 혹은 API 호출이 이루어지는 부분
-  // 하네스 단계에서는 특정 토큰 값에 관계없이 가상 유저를 반환합니다.
-  return MOCK_USER;
-};
+      return {
+        id: String(payload.sub ?? payload.id ?? 'unknown'),
+        name: String(payload.name ?? payload.nickname ?? '바리스테이션 유저'),
+        email: String(payload.email ?? ''),
+        avatarUrl: payload.picture ?? payload.avatarUrl ?? undefined,
+      };
+    }
+  } catch {
+    // 파싱 실패 시 기본값 반환
+  }
+
+  // 파싱 실패 또는 비정형 토큰인 경우 기본 유저 반환
+  return {
+    id: 'mock-user',
+    name: '바리스테이션 유저',
+    email: '',
+    avatarUrl: undefined,
+  };
+}

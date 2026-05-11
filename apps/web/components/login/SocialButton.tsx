@@ -4,7 +4,7 @@ import { Button } from '@coffee-service/ui-library';
 import { motion } from 'framer-motion';
 import React from 'react';
 
-import { REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth-utils';
+import { REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth';
 
 export type SocialProvider = 'google' | 'naver' | 'kakao';
 
@@ -121,8 +121,10 @@ export default function SocialButton({ provider }: SocialButtonProps) {
       isSecure ? '; Secure' : ''
     }`;
 
-    // 4. Next.js가 백엔드로 프록시해주는 OAuth2 인증 시작 경로로 이동
-    window.location.href = `/oauth2/authorization/${provider}`;
+    // 4. BFF Route Handler를 통한 OAuth2 인증 시작
+    //    - /api/auth/[provider]/route.ts가 백엔드 도메인을 은닉
+    //    - HTTP(localhost) 환경에서 Secure 쿠키 플래그 제거 (Cookie Laundry)
+    window.location.href = `/api/auth/${provider}`;
   };
 
   return (
