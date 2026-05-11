@@ -13,26 +13,46 @@ export interface BffInfo {
 }
 
 /**
- * 현재 요청과 환경변수로부터 BFF 정보를 추출합니다.
+ * 현재 요청(있는 경우)과 환경변수로부터 BFF 정보를 추출합니다.
  */
-export function getBffInfo(request: NextRequest): BffInfo {
-  const backendUrl = process.env.BACKEND_URL;
-  if (!backendUrl) {
+export function getBffInfo(request?: NextRequest): BffInfo {
+  // 클라이언트 사이드에서는 NEXT_PUBLIC_ 접두사가 붙은 것만 접근 가능
+  const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+  // 서버 사이드에서 호출되었는데 백엔드 URL이 없으면 에러 (브라우저에서는 절대 경로 요청 가능하므로 허용)
+  if (!backendUrl && typeof window === 'undefined') {
     throw new Error('[BFF] BACKEND_URL 환경변수가 설정되지 않았습니다.');
   }
 
-  const isSecure = request.nextUrl.protocol === 'https:';
+  // 1. 환경변수 우선 사용
+  let host = process.env.BFF_HOST || process.env.NEXT_PUBLIC_BFF_HOST;
+  let proto = process.env.BFF_PROTO || process.env.NEXT_PUBLIC_BFF_PROTO;
+  let port = process.env.BFF_PORT || process.env.NEXT_PUBLIC_BFF_PORT;
 
-  // 환경변수 우선 사용, 없으면 현재 요청 정보 사용
-  const host = process.env.BFF_LOCAL_HOST || request.nextUrl.host;
-  const proto = (process.env.BFF_LOCAL_PROTO || request.nextUrl.protocol).replace(':', '');
-  const port = process.env.BFF_LOCAL_PORT || request.nextUrl.port || (isSecure ? '443' : '80');
+  // 2. 요청 객체 또는 브라우저 환경 정보가 있으면 보완
+  if (request) {
+    const isSecure = request.nextUrl.protocol === 'https:';
+    host = host || request.nextUrl.host;
+    proto = (proto || request.nextUrl.protocol).replace(':', '');
+    port = port || request.nextUrl.port || (isSecure ? '443' : '80');
+  } else if (typeof window !== 'undefined') {
+    // 브라우저 환경인 경우 window.location 사용
+    const isSecure = window.location.protocol === 'https:';
+    host = host || window.location.host;
+    proto = (proto || window.location.protocol).replace(':', '');
+    port = port || window.location.port || (isSecure ? '443' : '80');
+  }
+
+  // 3. 최종 기본값 (fallback)
+  host = host || 'localhost:3000';
+  proto = (proto || 'http').replace(':', '');
+  port = port || '3000';
 
   const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1') || proto === 'http';
 
   return {
     backendUrl: backendUrl.replace(/\/$/, ''),
-    bffSecret: process.env.BFF_SECRET,
+    bffSecret: process.env.BFF_SECRET || process.env.NEXT_PUBLIC_BFF_SECRET,
     host,
     proto,
     port,

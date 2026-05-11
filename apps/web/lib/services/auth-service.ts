@@ -10,7 +10,9 @@
  * - app/api/auth/refresh/route.ts (Node.js Runtime)
  */
 
-import { BffInfo, getBffHeaders } from '@/lib/utils/bff-utils';
+import { NextRequest } from 'next/server';
+
+import { fetchBackend } from '@/lib/api/client';
 
 export interface RefreshResult {
   accessToken: string;
@@ -34,23 +36,17 @@ export const authService = {
   /**
    * refreshToken을 사용하여 새로운 accessToken을 발급받습니다.
    *
-   * @param cookie - 브라우저에서 전달된 Cookie 헤더 (refreshToken 포함)
-   * @param bffInfo - BFF 설정 정보
+   * @param bffRequest - (옵션) Middleware에서 호출 시 현재 요청 객체
    * @throws Error - 네트워크 오류, 백엔드 오류 등
    */
-  async refreshAccessToken(cookie: string, bffInfo: BffInfo): Promise<RefreshResult> {
-    const refreshUrl = `${bffInfo.backendUrl}/api/auth/refresh`;
-
-    const requestHeaders = getBffHeaders(bffInfo, {
-      Cookie: cookie,
-      accept: 'application/json',
-    });
+  async refreshAccessToken(bffRequest?: NextRequest): Promise<RefreshResult> {
+    const refreshUrl = `/api/auth/refresh`;
 
     let response: Response;
     try {
-      response = await fetch(refreshUrl, {
+      response = await fetchBackend(refreshUrl, {
         method: 'POST',
-        headers: requestHeaders,
+        bffRequest,
         signal: AbortSignal.timeout(5000),
       });
     } catch (networkError) {
