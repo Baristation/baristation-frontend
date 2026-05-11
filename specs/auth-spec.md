@@ -4,108 +4,86 @@
 
 본 문서는 Dripnote 프론트엔드의 소셜 로그인, 토큰 재발급, 로그아웃(BFF 패턴) 프로세스를 정의합니다. 현재 구조는 미들웨어 중심의 프록시 및 환승역(Transit) 방식을 채택하고 있으며, 인증 관련 API 로직은 모두 **Server Action**으로 처리하여 민감 정보가 브라우저에 노출되지 않도록 합니다.
 
-## 2. 소셜 로그인 흐름
+---
 
-### 2.1 로그인 시작
+## 2. 통합 아키텍처 및 통신 구조
 
-1. 사용자가 UI에서 로그인 버튼 클릭 (예: `/api/auth/google`)
-2. `app/api/auth/[provider]/route.ts` 실행:
-   - 백엔드 `${BACKEND_URL}/oauth2/authorization/[provider]` 호출 (`fetchBackend` 사용, BFF 헤더 자동 포함).
-   - 응답의 `location` 헤더(소셜 인가 페이지 URL)를 추출하여 브라우저 리다이렉트.
-   - 백엔드가 설정한 쿠키를 브라우저에 전달 (`proxyCookies`).
+모든 백엔드 통신 및 인증 로직은 다음 4개의 핵심 파일로 응집되었습니다.
 
-### 2.2 콜백 및 토큰 발급
+### 2.1 통합 백엔드 클라이언트 (`lib/api/backend.ts`)
 
-1. 소셜 서비스 인증 후 백엔드로 인가 코드(Code) 전달.
-2. 백엔드가 프론트엔드로 리다이렉트 시 미들웨어가 이를 가로챔.
-3. `middleware.ts`의 OAuth 프록시 로직:
-   - `/login/oauth2/code/*` 경로를 백엔드로 프록시 (`fetchBackend` 사용).
-   - 백엔드 응답 쿠키(refreshToken 등)를 브라우저에 설정.
-   - `/auth/success`로 리다이렉트.
+- **역할**: 모든 백엔드 요청의 유일한 진입점.
+- **주요 함수**:
+  - `fetchBackend(endpoint, options)`: BFF 필수 헤더 및 서버사이드 쿠키를 자동으로 주입하는 fetch 래퍼.
+  - `refreshTokens(bffRequest?)`: 백엔드 `/api/auth/refresh`와 통신하여 토큰을 갱신하는 공통 로직.
+  - `getBackendBaseUrl()`: OAuth 리다이렉트 등 절대 URL 구성이 필요할 때 사용.
+- **보안**: BFF 설정(`getBffInfo`, `buildBffHeaders`) 로직을 내부로 숨겨 캡슐화.
 
-### 2.3 최종 완료 (Transit)
+### 2.2 인증 유틸리티 (`lib/utils/auth.ts`)
 
-1. `/auth/success` 접근 시 미들웨어가 다시 가로챔:
-   - `refreshToken` 유무 확인.
-   - `authService.refreshAccessToken(request)`을 호출하여 `accessToken` 발급.
-   - `accessToken` 쿠키 설정 후 최종 목적지(또는 홈)로 리다이렉트.
+- **역할**: 상수, 클라이언트 인증 상태 확인, 쿠키 프록시 및 로컬 재작성 처리.
+- **주요 기능**:
+  - `AUTH_TOKEN_KEY`, `REDIRECT_COOKIE_KEY` 등 상수 정의.
+  - `authUtils`: 클라이언트 사이드에서 토큰 읽기/삭제 및 인증 여부 확인.
+  - `proxyCookies`, `rewriteCookieForLocal`: 백엔드 쿠키를 프론트엔드로 전달할 때 로컬 환경(HTTP)에 맞게 재작성.
 
-## 3. 로그아웃
+### 2.3 미들웨어 (`middleware.ts`)
 
-### 3.1 Server Action 방식
+- **역할**: 전역 경로 보호, OAuth 콜백 프록시, 로그인 페이지 가드.
+- **보안 강화**: 인증된 사용자가 `/login` 접근 시 홈(`/`)으로 리다이렉트하는 `handleLoginPage` 추가.
 
-- 클라이언트에서 `logoutAction()` Server Action 호출 (`actions/auth-actions.ts`).
-- 서버에서 쿠키의 `accessToken`을 읽어 백엔드 `/api/auth/logout`에 `Authorization: Bearer {accessToken}` 헤더로 요청.
-- 백엔드에서 세션 무효화 후, 서버에서 `accessToken` 및 `refreshToken` 쿠키를 직접 삭제.
-- 클라이언트는 로그인 페이지로 이동.
+### 2.4 서버 액션 (`actions/auth.action.ts`)
 
-### 3.2 백엔드 로그아웃 API 스펙
+- **역할**: 클라이언트에서 호출 가능한 보안 인증 인터페이스.
+- **주요 액션**: `logoutAction`, `getUserAction`, `refreshAction`.
 
-| 항목           | 값                                                            |
-| -------------- | ------------------------------------------------------------- |
-| Method         | `POST`                                                        |
-| Endpoint       | `/api/auth/logout`                                            |
-| Request Header | `Authorization: Bearer {accessToken}`                         |
-| Response       | `{ statusCode: "200", message: "로그아웃 성공", data: null }` |
+---
 
-## 4. Access Token 재발급 (Refresh)
+## 3. 상세 프로세스
 
-### 4.1 자동 재발급 (Middleware)
+### 3.1 소셜 로그인 및 콜백
 
-- Protected 경로 접근 시 `accessToken`이 없고 `refreshToken`만 있는 경우 미들웨어 내에서 동기적으로 재발급 수행.
-- `authService.refreshAccessToken(request)`을 호출하여 처리.
+1. **시작**: `/api/auth/[provider]/route.ts`가 `getBackendBaseUrl()`을 사용하여 백엔드 인가 주소로 리다이렉트.
+2. **콜백 프록시**: 백엔드의 `/login/oauth2/code/*` 응답을 미들웨어가 `fetchBackend`로 가로채어 쿠키를 캡처 후 `/auth/success`로 이동.
+3. **환승역(Transit)**: 미들웨어가 `/auth/success`에서 `refreshTokens(request)`를 호출하여 최종 `accessToken`을 발급받고 목적지로 리다이렉트.
 
-### 4.2 수동/안전장치 재발급 (Server Action)
+### 3.2 로그아웃 (Server Action)
 
-- 클라이언트 애플리케이션(React Query 등)에서 401 에러 감지 시 또는 미들웨어 스킵 시 `refreshAction()` Server Action 호출.
-- `actions/auth.action.ts`가 백엔드와 통신하여 새 토큰을 받아와 쿠키를 업데이트.
+1. 클라이언트가 `logoutAction()` 호출.
+2. 서버에서 쿠키의 `accessToken`으로 백엔드 `/api/auth/logout` 호출 (세션 무효화).
+3. 서버사이드에서 `accessToken` 및 `refreshToken` 쿠키 즉시 삭제.
 
-## 5. 유저 정보 조회
+### 3.3 토큰 재발급 (Refresh)
 
-- 클라이언트에서 `getUserAction()` Server Action 호출 (`actions/auth-actions.ts`).
-- 서버에서 쿠키의 `accessToken`을 읽어 유저 정보를 반환.
-- 백엔드 `/api/member/me` 연동 시 Server Action 내 주석 해제.
+1. **자동**: 미들웨어에서 Protected 경로 접근 시 토큰이 만료되었으면 `refreshTokens(request)` 호출.
+2. **수동/폴백**: 클라이언트에서 401 발생 시 `refreshAction()` 서버 액션 호출.
 
-## 6. 기술 스펙 및 필수 헤더
+---
 
-### 사용 기술
-
-- **Framework**: Next.js 15 (App Router)
-- **Runtime**: Edge Runtime (Middleware), Node.js Runtime (API Routes, Server Actions)
-- **Communication**: `fetchBackend` 통합 클라이언트 (`lib/api/client.ts`)
-
-### 통합 API 클라이언트 (`fetchBackend`)
-
-모든 백엔드 요청은 `fetchBackend(endpoint, options)`를 통해 수행하며, 다음을 자동으로 처리합니다:
-
-- BFF 필수 헤더 (`X-BFF-Secret`, `X-BFF-Host`, `X-BFF-Proto`, `X-BFF-Port`) 자동 주입
-- `X-Forwarded-*` 호환 헤더 자동 추가
-- Server Component/Action 컨텍스트에서 `Cookie` 헤더 자동 전달
-- Middleware 컨텍스트에서는 `bffRequest` 옵션으로 요청 객체 명시적 전달
+## 4. 기술 스펙 및 필수 헤더
 
 ### 필수 헤더 (BFF → Backend)
 
-| 헤더            | 값                     | 설명                         |
-| --------------- | ---------------------- | ---------------------------- |
-| `X-BFF-Secret`  | `BFF_SECRET` 환경변수  | BFF 보안 인증키              |
-| `X-BFF-Host`    | BFF 서버 호스트        | 클라이언트 Host              |
-| `X-BFF-Proto`   | `http` / `https`       | 프로토콜                     |
-| `X-BFF-Port`    | BFF 서버 포트          | 포트 번호                    |
-| `Cookie`        | 요청 쿠키 전달         | 서버사이드 호출 시 자동 포함 |
-| `Authorization` | `Bearer {accessToken}` | 인증이 필요한 API 요청 시    |
+| 헤더                                  | 설명                                                  |
+| :------------------------------------ | :---------------------------------------------------- |
+| `X-BFF-Secret`                        | BFF 보안 인증키 (환경변수)                            |
+| `X-BFF-Host` / `Proto` / `Port`       | 클라이언트의 원래 접속 정보 (백엔드 세션/쿠키 생성용) |
+| `X-Forwarded-Host` / `Proto` / `Port` | 표준 프록시 헤더 호환성 유지                          |
+| `Cookie`                              | 서버사이드 호출 시 브라우저 쿠키를 백엔드로 전달      |
 
 ### 쿠키 정책
 
-- `baristation-auth-token` (`AUTH_TOKEN_KEY`): 클라이언트 접근 가능 (JavaScript), 짧은 수명.
-- `refreshToken`: `HttpOnly`, `Secure`, `SameSite=Lax`, 긴 수명 (백엔드 관리).
-- `baristation-redirect-to` (`REDIRECT_COOKIE_KEY`): 로그인 완료 후 복귀할 경로 저장용.
+- `baristation-auth-token` (`AUTH_TOKEN_KEY`): 클라이언트 접근 가능 (JS용), 짧은 수명.
+- `refreshToken`: `HttpOnly`, `Secure`, `SameSite=Lax` (백엔드 관리).
+- **로컬 개발**: `rewriteCookieForLocal` 유틸리티를 통해 HTTP 환경에서 `Secure` 속성 제거 및 `SameSite=Lax` 강제 적용.
 
-### Server Action vs API Route 사용 기준
+---
 
-| 케이스                       | 방식                                               |
-| ---------------------------- | -------------------------------------------------- |
-| 인증/로그아웃/유저 정보 조회 | **Server Action** (`actions/auth.action.ts`)       |
-| OAuth 콜백 프록시            | **API Route** (리다이렉트 응답 처리 필요)          |
-| 토큰 재발급 (수동)           | **Server Action** (`actions/auth.action.ts`)       |
-| Playground 테스트 요청       | **Server Action** (`actions/playground.action.ts`) |
-| Middleware 내 인증 처리      | **Middleware** (Edge Runtime)                      |
+## 5. 레이어별 사용 기준
+
+| 케이스                  | 방식               | 위치                               |
+| :---------------------- | :----------------- | :--------------------------------- |
+| 인증/로그아웃/유저 조회 | **Server Action**  | `actions/auth.action.ts`           |
+| OAuth 콜백 프록시       | **API Route**      | `app/api/auth/[provider]/route.ts` |
+| 전역 경로 보호/가드     | **Middleware**     | `middleware.ts`                    |
+| 백엔드 통신 유틸        | **Backend Client** | `lib/api/backend.ts`               |
