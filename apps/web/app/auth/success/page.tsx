@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { refreshAction } from '@/actions/auth.action';
+
 /**
  * AuthSuccessPage — OAuth 인증 환승역 페이지
  *
@@ -13,7 +15,7 @@ import { useEffect, useState } from 'react';
  *
  * [안전장치]
  * 미들웨어가 어떤 이유로 스킵된 경우를 대비해,
- * 클라이언트에서 /api/auth/refresh를 직접 호출하는 폴백 로직을 제공합니다.
+ * 클라이언트에서 refreshAction 서버 액션을 직접 호출하는 폴백 로직을 제공합니다.
  */
 export default function AuthSuccessPage() {
   const router = useRouter();
@@ -25,12 +27,9 @@ export default function AuthSuccessPage() {
     // 미들웨어가 정상 처리했다면 이 코드는 실행되지 않음 (이미 리다이렉트됨)
     const fallbackRefresh = async () => {
       try {
-        const res = await fetch('/api/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
-        });
+        const result = await refreshAction();
 
-        if (res.ok) {
+        if (result.success) {
           // 리다이렉트 쿠키에서 목적지 추출
           const redirectMatch = document.cookie
             .split('; ')
@@ -39,7 +38,7 @@ export default function AuthSuccessPage() {
 
           router.replace(redirectTo);
         } else {
-          throw new Error(`토큰 재발급 실패: ${res.status}`);
+          throw new Error(result.error || '토큰 재발급 실패');
         }
       } catch (err) {
         console.error('[AuthSuccess] 안전장치 토큰 재발급 실패:', err);

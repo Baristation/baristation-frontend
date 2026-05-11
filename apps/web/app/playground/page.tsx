@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-import { executePlaygroundRequest } from '@/actions/playground-actions';
+import { executePlaygroundRequest } from '@/actions/playground.action';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 

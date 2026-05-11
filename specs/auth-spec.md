@@ -55,10 +55,10 @@
 - Protected 경로 접근 시 `accessToken`이 없고 `refreshToken`만 있는 경우 미들웨어 내에서 동기적으로 재발급 수행.
 - `authService.refreshAccessToken(request)`을 호출하여 처리.
 
-### 4.2 수동 재발급 (API Route)
+### 4.2 수동/안전장치 재발급 (Server Action)
 
-- 클라이언트 애플리케이션(React Query 등)에서 401 에러 감지 시 `POST /api/auth/refresh` 호출.
-- `app/api/auth/refresh/route.ts`가 백엔드와 통신하여 새 토큰을 받아와 쿠키를 업데이트.
+- 클라이언트 애플리케이션(React Query 등)에서 401 에러 감지 시 또는 미들웨어 스킵 시 `refreshAction()` Server Action 호출.
+- `actions/auth.action.ts`가 백엔드와 통신하여 새 토큰을 받아와 쿠키를 업데이트.
 
 ## 5. 유저 정보 조회
 
@@ -102,10 +102,10 @@
 
 ### Server Action vs API Route 사용 기준
 
-| 케이스                       | 방식                                                  |
-| ---------------------------- | ----------------------------------------------------- |
-| 인증/로그아웃/유저 정보 조회 | **Server Action** (`actions/auth-actions.ts`)         |
-| OAuth 콜백 프록시            | **API Route** (리다이렉트 응답 처리 필요)             |
-| 토큰 재발급 (수동)           | **API Route** (클라이언트 TanStack Query 등에서 호출) |
-| Playground 테스트 요청       | **Server Action** (`actions/playground-actions.ts`)   |
-| Middleware 내 인증 처리      | **Middleware** (Edge Runtime)                         |
+| 케이스                       | 방식                                               |
+| ---------------------------- | -------------------------------------------------- |
+| 인증/로그아웃/유저 정보 조회 | **Server Action** (`actions/auth.action.ts`)       |
+| OAuth 콜백 프록시            | **API Route** (리다이렉트 응답 처리 필요)          |
+| 토큰 재발급 (수동)           | **Server Action** (`actions/auth.action.ts`)       |
+| Playground 테스트 요청       | **Server Action** (`actions/playground.action.ts`) |
+| Middleware 내 인증 처리      | **Middleware** (Edge Runtime)                      |

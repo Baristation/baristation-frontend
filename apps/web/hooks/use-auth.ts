@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getUserAction, logoutAction } from '@/actions/auth-actions';
+import { getUserAction, logoutAction } from '@/actions/auth.action';
 import { User } from '@/lib/utils/user-mock';
 
 export type { User };
