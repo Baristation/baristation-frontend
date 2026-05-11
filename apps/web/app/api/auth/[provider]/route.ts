@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getBffInfo, getBffHeaders, proxyCookies } from '@/lib/utils/bff-utils';
+import { fetchBackend } from '@/lib/api/client';
+import { getBffInfo, proxyCookies } from '@/lib/utils/bff-utils';
 
 /**
  * BFF (Backend For Frontend) OAuth Authorization Redirect Handler
@@ -21,14 +22,9 @@ export async function GET(
   const backendUrl = `${bffInfo.backendUrl}/oauth2/authorization/${provider}`;
 
   try {
-    const requestHeaders = getBffHeaders(bffInfo, {
-      cookie: request.headers.get('cookie') ?? '',
-      'user-agent': request.headers.get('user-agent') ?? '',
-    });
-
-    const response = await fetch(backendUrl, {
+    const response = await fetchBackend(backendUrl, {
       method: 'GET',
-      headers: requestHeaders,
+      bffRequest: request,
       redirect: 'manual',
       signal: AbortSignal.timeout(5000),
     });

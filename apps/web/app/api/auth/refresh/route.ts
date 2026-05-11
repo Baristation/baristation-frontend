@@ -10,13 +10,7 @@ import { getBffInfo, rewriteCookieForLocal } from '@/lib/utils/bff-utils';
 export async function POST(request: NextRequest) {
   try {
     const bffInfo = getBffInfo(request);
-    const cookie = request.headers.get('cookie') ?? '';
-
-    if (!cookie.includes('refreshToken')) {
-      return NextResponse.json({ error: 'Refresh token is missing in request' }, { status: 401 });
-    }
-
-    const result = await authService.refreshAccessToken(cookie, bffInfo);
+    const result = await authService.refreshAccessToken(request);
 
     const res = NextResponse.json({
       accessToken: result.accessToken,

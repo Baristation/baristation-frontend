@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { fetchBackend } from '@/lib/api/client';
 import { authService } from '@/lib/services/auth-service';
 import { AUTH_TOKEN_KEY, REDIRECT_COOKIE_KEY, isValidInternalPath } from '@/lib/utils/auth-utils';
-import {
-  getBffInfo,
-  getBffHeaders,
-  proxyCookies,
-  rewriteCookieForLocal,
-  BffInfo,
-} from '@/lib/utils/bff-utils';
+import { getBffInfo, proxyCookies, rewriteCookieForLocal, BffInfo } from '@/lib/utils/bff-utils';
 
 /**
  * Protected 경로 목록
@@ -27,13 +22,11 @@ function isProtectedPath(pathname: string): boolean {
  */
 async function handleOAuthProxy(request: NextRequest, bffInfo: BffInfo) {
   const { pathname, search } = request.nextUrl;
-  const targetUrl = `${bffInfo.backendUrl}${pathname}${search}`;
-  const requestHeaders = getBffHeaders(bffInfo, request.headers);
 
   try {
-    const backendResponse = await fetch(targetUrl, {
+    const backendResponse = await fetchBackend(`${pathname}${search}`, {
       method: 'GET',
-      headers: requestHeaders,
+      bffRequest: request,
       redirect: 'manual',
       cache: 'no-store',
       signal: AbortSignal.timeout(5000),
@@ -63,10 +56,7 @@ async function handleAuthSuccess(request: NextRequest, bffInfo: BffInfo) {
   }
 
   try {
-    const result = await authService.refreshAccessToken(
-      request.headers.get('cookie') ?? '',
-      bffInfo,
-    );
+    const result = await authService.refreshAccessToken(request);
 
     // 최종 목적지 결정
     const rawRedirect = request.cookies.get(REDIRECT_COOKIE_KEY)?.value;
@@ -116,10 +106,7 @@ async function handleProtectedRoute(request: NextRequest, bffInfo: BffInfo) {
 
   if (refreshToken) {
     try {
-      const result = await authService.refreshAccessToken(
-        request.headers.get('cookie') ?? '',
-        bffInfo,
-      );
+      const result = await authService.refreshAccessToken(request);
 
       const res = NextResponse.next();
       res.cookies.set(AUTH_TOKEN_KEY, result.accessToken, {
