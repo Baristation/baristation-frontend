@@ -3,17 +3,17 @@
 import { Search, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-interface BeanSearchBarProps {
+interface ProductSearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }
 
-export default function BeanSearchBar({
+export default function ProductSearchBar({
   value,
   onChange,
   placeholder = '검색어를 입력하세요',
-}: BeanSearchBarProps) {
+}: ProductSearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
   const [isComposing, setIsComposing] = useState(false);
 

@@ -5,16 +5,16 @@ import { Coffee, Droplets, Flame, Layers, Scale, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { AROMA_BG_CLASS, type BeanInfo } from '@/lib/api/beans';
+import { FLAVOR_BG_CLASS, type ProductInfo } from '@/lib/api/products';
 
-interface BeanCardProps
+interface ProductCardProps
   extends Pick<
-    BeanInfo,
+    ProductInfo,
     | 'id'
     | 'name'
     | 'origin'
-    | 'primaryAroma'
-    | 'aromaImageUrl'
+    | 'primaryFlavor'
+    | 'flavorImageUrl'
     | 'balance'
     | 'sweetness'
     | 'acidity'
@@ -71,22 +71,22 @@ function ProfileIndicator({
 }
 
 /**
- * BeanCard - 원두 상품 이미지 카드 (VisualCard Compound Pattern 적용)
+ * ProductCard - 원두 상품 이미지 카드 (VisualCard Compound Pattern 적용)
  * 디자인 고도화: 호버 시 원두 프로필(맛, 바디, 로스팅) 정보를 오버레이로 표시
  */
-export default function BeanCard({
+export default function ProductCard({
   id,
   name,
   origin,
-  primaryAroma,
-  aromaImageUrl,
+  primaryFlavor,
+  flavorImageUrl,
   balance,
   sweetness,
   acidity,
   roasting,
   body,
-}: BeanCardProps) {
-  const bgClass = AROMA_BG_CLASS[primaryAroma] ?? 'bg-gray-100';
+}: ProductCardProps) {
+  const bgClass = FLAVOR_BG_CLASS[primaryFlavor] ?? 'bg-gray-100';
 
   return (
     <VisualCard.Root
@@ -100,12 +100,12 @@ export default function BeanCard({
       hoverEffect="translate"
       className={bgClass}
     >
-      <Link href={`/beans/${id}`} aria-label={`${name} 원두 상세 정보 보기`}>
+      <Link href={`/products/${id}`} aria-label={`${name} 원두 상세 정보 보기`}>
         <VisualCard.ImageContainer aspectRatio="3/4">
           <VisualCard.Image asChild hoverScale={1.1}>
             <Image
-              src={aromaImageUrl}
-              alt={`${primaryAroma} 향미의 ${name} 원두 이미지`}
+              src={flavorImageUrl}
+              alt={`${primaryFlavor} 향미의 ${name} 원두 이미지`}
               fill
               className="object-cover transition-transform duration-700"
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

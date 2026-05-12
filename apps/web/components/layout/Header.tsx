@@ -49,8 +49,8 @@ export default function Header() {
           <Link href="/" className="hover:text-primary transition-colors">
             Home
           </Link>
-          <Link href="/beans" className="hover:text-primary transition-colors">
-            Bean Info
+          <Link href="/products" className="hover:text-primary transition-colors">
+            Product
           </Link>
           <Link href="/classes" className="hover:text-primary transition-colors">
             Classes
@@ -69,13 +69,13 @@ export default function Header() {
             <span className="text-[10px] font-medium">Home</span>
           </Link>
           <Link
-            href="/beans"
+            href="/products"
             className={`flex flex-col items-center gap-1 ${
-              pathname.startsWith('/beans') ? 'text-amber-600' : 'hover:text-gray-900'
+              pathname.startsWith('/products') ? 'text-amber-600' : 'hover:text-gray-900'
             }`}
           >
             <Coffee className="h-5 w-5" />
-            <span className="text-[10px] font-medium">Beans</span>
+            <span className="text-[10px] font-medium">Products</span>
           </Link>
           <Link
             href="/classes"

@@ -57,7 +57,7 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 
 1. 페이지 최상단에서 배경을 완전 투명으로 유지하다가, 스크롤 발생 시 반투명 Glassmorphism 효과를 적용한다
 2. 좌측에 `Playfair Display` 폰트의 **"Baristation"** 로고를 배치한다
-3. 중앙/우측에 Home, Bean Info, Classes 메뉴를 제공한다
+3. 중앙/우측에 Home, Product Info, Classes 메뉴를 제공한다
 4. 우측 끝 북마크 아이콘으로 저장 목록 페이지로 이동한다
 5. `localStorage` 토큰 유무를 감지하여 User / LogOut 아이콘을 동적으로 전환한다
 6. LogOut 아이콘 클릭 시 `authUtils.removeToken`을 실행하여 세션을 종료한다
@@ -155,12 +155,12 @@ interface HeroSectionProps {
 
 ---
 
-### AromaNotes
+### FlavorNotes
 
 #### 1. Overview (맥락)
 
 - **목적**: 향미 카테고리별 이미지 카드를 격자 형태로 배열하여 사용자가 시각적으로 원두 취향을 탐색하도록 유도하는 섹션
-- **위치**: `apps/web/components/main/AromaNotes.tsx`
+- **위치**: `apps/web/components/main/FlavorNotes.tsx`
 - **부모 컴포넌트**: `page.tsx` (메인 엔트리)
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
@@ -199,7 +199,7 @@ interface FlavorNotesProps {
 #### 5. Functional Requirements (단계별 요구사항)
 
 1. 8종의 향미(카카오, 복숭아, 아몬드, 자몽, 캐러멜, 스모키 등) 카드를 격자 레이아웃으로 배열한다
-2. 각 `AromaCard`에 `name`, `imageUrl`, `link`를 전달한다
+2. 각 `FlavorCard`에 `name`, `imageUrl`, `link`를 전달한다
 3. 스크롤 진입 시 카드가 순차적으로 페이드인된다
 
 #### 6. Design Spec (디자인 명세)
@@ -223,13 +223,13 @@ interface FlavorNotesProps {
 
 ---
 
-### AromaCard
+### FlavorCard
 
 #### 1. Overview (맥락)
 
 - **목적**: 단일 향미 카테고리를 정사각형 이미지 카드로 표현하며, 클릭 시 해당 향미 원두 목록으로 라우팅하는 인터랙티브 카드 컴포넌트
-- **위치**: `apps/web/components/common/cards/AromaCard.tsx`
-- **부모 컴포넌트**: `AromaNotes`
+- **위치**: `apps/web/components/common/cards/FlavorCard.tsx`
+- **부모 컴포넌트**: `FlavorNotes`
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
@@ -241,7 +241,7 @@ interface FlavorNotesProps {
 **Props**:
 
 ```ts
-interface AromaCardProps {
+interface FlavorCardProps {
   name: string; // 향미 이름
   imageUrl: string; // 배경 이미지 URL
   link: string; // 클릭 시 라우팅 경로
@@ -276,7 +276,7 @@ interface AromaCardProps {
   - 대상: 이미지 요소만 (`scale: 1.0 → 1.1`)
   - Duration: `0.3s`, Easing: `easeOut`
 - **Typography**: 향미 이름 — `Outfit`, Bold, `Brand-Cream` 또는 White
-- **Responsive**: 부모 `AromaNotes`의 그리드 열 수에 따라 크기 자동 조절
+- **Responsive**: 부모 `FlavorNotes`의 그리드 열 수에 따라 크기 자동 조절
 
 #### 7. Definition of Done (검증 기준)
 
@@ -288,12 +288,12 @@ interface AromaCardProps {
 
 ---
 
-### RecommendedBeans
+### RecommendedProducts
 
 #### 1. Overview (맥락)
 
 - **목적**: API에서 받아온 큐레이션 추천 원두 목록을 카드 형태로 나열하는 섹션
-- **위치**: `apps/web/components/main/RecommendedBeans.tsx`
+- **위치**: `apps/web/components/main/RecommendedProducts.tsx`
 - **부모 컴포넌트**: `page.tsx` (메인 엔트리)
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
@@ -306,13 +306,13 @@ interface AromaCardProps {
 **Props**:
 
 ```ts
-interface BeanItem
+interface ProductItem
   extends Pick<
-    BeanInfo,
+    ProductInfo,
     | 'name'
     | 'origin'
-    | 'primaryAroma'
-    | 'aromaImageUrl'
+    | 'primaryFlavor'
+    | 'flavorImageUrl'
     | 'link'
     | 'balance'
     | 'sweetness'
@@ -322,8 +322,8 @@ interface BeanItem
     | 'purchaseUrl'
   > {}
 
-interface RecommendedBeansProps {
-  beans: BeanItem[];
+interface RecommendedProductsProps {
+  products: ProductItem[];
 }
 ```
 
@@ -333,15 +333,15 @@ interface RecommendedBeansProps {
 
 #### 4. UI States (상태 명세)
 
-| 상태        | 트리거 조건             | UI 표현            |
-| ----------- | ----------------------- | ------------------ |
-| **Default** | 데이터 정상 로드        | 원두 카드 목록     |
-| **Loading** | 데이터 페칭 중          | Skeleton 카드 목록 |
-| **Empty**   | `beans` 배열이 비어있음 | 빈 상태 안내 문구  |
+| 상태        | 트리거 조건                | UI 표현            |
+| ----------- | -------------------------- | ------------------ |
+| **Default** | 데이터 정상 로드           | 원두 카드 목록     |
+| **Loading** | 데이터 페칭 중             | Skeleton 카드 목록 |
+| **Empty**   | `products` 배열이 비어있음 | 빈 상태 안내 문구  |
 
 #### 5. Functional Requirements (단계별 요구사항)
 
-1. `beans` 배열을 순서대로 `BeanCard`로 렌더링한다
+1. `products` 배열을 순서대로 `ProductCard`로 렌더링한다
 2. 스크롤 진입 시 카드가 순차적으로 페이드인된다
 3. 백엔드 연동 전에는 `apps/web/lib/api/main.ts`의 `mockMainData`를 사용한다
 
@@ -366,11 +366,11 @@ interface RecommendedBeansProps {
 
 ---
 
-### BeanCard
+### ProductCard
 
-- **명세**: [원두 정보 페이지 명세서(beans-page.md) - BeanCard](beans-page.md#beancard) 항목을 참조하십시오.
-- **위치**: `apps/web/components/common/cards/BeanCard.tsx`
-- **특이사항**: 메인 페이지에서는 `RecommendedBeans` 그리드 내에서 동일한 컴포넌트를 사용하며, 모든 인터랙션(프로필 오버레이 등)이 동일하게 지원됩니다.
+- **명세**: [원두 정보 페이지 명세서(products-page.md) - ProductCard](products-page.md#productcard) 항목을 참조하십시오.
+- **위치**: `apps/web/components/common/cards/ProductCard.tsx`
+- **특이사항**: 메인 페이지에서는 `RecommendedProducts` 그리드 내에서 동일한 컴포넌트를 사용하며, 모든 인터랙션(프로필 오버레이 등)이 동일하게 지원됩니다.
 
 ---
 
@@ -488,10 +488,10 @@ RootLayout
   ├── GlobalNav
   └── page.tsx (메인 엔트리)
         ├── HeroSection (Client Component - embla-carousel 캐러셀 및 모션)
-        ├── AromaNotes (Client Component - 향미 카드 그리드)
-        │     └── AromaCard × 8
-        ├── RecommendedBeans (Client Component - 추천 원두 목록)
-        │     └── BeanCard × N
+        ├── FlavorNotes (Client Component - 향미 카드 그리드)
+        │     └── FlavorCard × 8
+        ├── RecommendedProducts (Client Component - 추천 원두 목록)
+        │     └── ProductCard × N
         └── RoasteryMapSection (Client Component - useKakaoLoader 비동기 렌더링)
   └── Footer
 ```
@@ -545,31 +545,31 @@ HTTP/1.1 400
 
 ### Response Body
 
-| Name                 | Type  | Description                                                                                                                             |
-| :------------------- | :---- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| **aromas**           | array | 향미 목록 (`id`, `name`, `imageUrl`, `link`)                                                                                            |
-| **recommendedBeans** | array | 추천 원두 목록 (`id`, `name`, `origin`, `primaryAroma`, `aromaImageUrl`, `link`, `balance`, `sweetness`, `acidity`, `body`, `roasting`) |
+| Name                    | Type  | Description                                                                                                                               |
+| :---------------------- | :---- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **flavors**             | array | 향미 목록 (`id`, `name`, `imageUrl`, `link`)                                                                                              |
+| **recommendedProducts** | array | 추천 원두 목록 (`id`, `name`, `origin`, `primaryFlavor`, `flavorImageUrl`, `link`, `balance`, `sweetness`, `acidity`, `body`, `roasting`) |
 
 ### Success JSON
 
 ```json
 {
-  "aromas": [
+  "flavors": [
     {
       "id": "cacao",
       "name": "카카오",
       "imageUrl": "https://example.com/images/cacao.jpg",
-      "link": "/beans?aromas=cacao"
+      "link": "/products?flavors=cacao"
     }
   ],
-  "recommendedBeans": [
+  "recommendedProducts": [
     {
       "id": 1,
       "name": "콜롬비아 엘 파라이소",
       "origin": "콜롬비아",
-      "primaryAroma": "복숭아",
-      "aromaImageUrl": "이미지 링크",
-      "link": "/beans/1",
+      "primaryFlavor": "복숭아",
+      "flavorImageUrl": "이미지 링크",
+      "link": "/products/1",
       "balance": 4,
       "sweetness": 5,
       "acidity": 4,

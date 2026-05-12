@@ -5,20 +5,20 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
 
-import BeanCardList from '@/components/beans/BeanCardList';
-import BeanFilterDrawer from '@/components/beans/BeanFilterDrawer';
-import BeanFilterPanel from '@/components/beans/BeanFilterPanel';
 import PageContainer from '@/components/layout/PageContainer';
+import ProductCardList from '@/components/products/ProductCardList';
+import ProductFilterDrawer from '@/components/products/ProductFilterDrawer';
+import ProductFilterPanel from '@/components/products/ProductFilterPanel';
 import {
-  applyBeanFilters,
+  applyProductFilters,
   DEFAULT_FILTERS,
-  type BeanFilterState,
-  mockBeansData,
+  type ProductFilterState,
+  mockProductsData,
   decodeParamsToFilters,
   encodeFiltersToParams,
-} from '@/lib/api/beans';
+} from '@/lib/api/products';
 
-function BeansPageContent() {
+function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -30,20 +30,20 @@ function BeansPageContent() {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const filteredBeans = useMemo(
-    () => applyBeanFilters(mockBeansData, filters, searchQuery),
+  const filteredProducts = useMemo(
+    () => applyProductFilters(mockProductsData, filters, searchQuery),
     [filters, searchQuery],
   );
 
   /** URL 쿼리 스트링 업데이트 공통 함수 */
   const updateUrl = (
-    newFilters: BeanFilterState,
+    newFilters: ProductFilterState,
     newSearch: string,
     options: { replace?: boolean } = { replace: false },
   ) => {
     const params = encodeFiltersToParams(newFilters, newSearch);
     const queryString = params.toString();
-    const url = `/beans${queryString ? '?' + queryString : ''}`;
+    const url = `/products${queryString ? '?' + queryString : ''}`;
 
     if (options.replace) {
       router.replace(url, { scroll: false });
@@ -52,7 +52,7 @@ function BeansPageContent() {
     }
   };
 
-  const handleFilterChange = (newFilters: BeanFilterState) => {
+  const handleFilterChange = (newFilters: ProductFilterState) => {
     updateUrl(newFilters, searchQuery, { replace: true });
   };
 
@@ -70,7 +70,7 @@ function BeansPageContent() {
       <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
         <div className="flex w-full items-start gap-8">
           {/* 좌측 필터 패널 (Desktop/Tablet) */}
-          <BeanFilterPanel
+          <ProductFilterPanel
             filters={filters}
             onChange={handleFilterChange}
             onReset={handleReset}
@@ -91,7 +91,7 @@ function BeansPageContent() {
                   Baristation
                 </Link>
                 <div className="font-outfit shrink-0 text-xs text-gray-400">
-                  {filteredBeans.length}개의 원두
+                  {filteredProducts.length}개의 원두
                 </div>
               </div>
 
@@ -105,13 +105,13 @@ function BeansPageContent() {
               </button>
             </div>
 
-            <BeanCardList beans={filteredBeans} isLoading={false} />
+            <ProductCardList products={filteredProducts} isLoading={false} />
           </div>
         </div>
       </div>
 
       {/* 모바일 필터 Drawer */}
-      <BeanFilterDrawer
+      <ProductFilterDrawer
         isOpen={isDrawerOpen}
         filters={filters}
         onChange={handleFilterChange}
@@ -124,10 +124,10 @@ function BeansPageContent() {
   );
 }
 
-export default function BeansPage() {
+export default function ProductsPage() {
   return (
     <Suspense>
-      <BeansPageContent />
+      <ProductsPageContent />
     </Suspense>
   );
 }

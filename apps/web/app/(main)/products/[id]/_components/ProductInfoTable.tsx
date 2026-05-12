@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 import SectionContainer from '@/components/layout/SectionContainer';
 
-interface BeanInfoTableProps {
+interface ProductInfoTableProps {
   origin: string;
   category?: string;
   blend?: boolean;
@@ -14,7 +14,7 @@ interface BeanInfoTableProps {
   description?: string;
 }
 
-export function BeanInfoTable({
+export function ProductInfoTable({
   origin,
   category,
   blend,
@@ -22,7 +22,7 @@ export function BeanInfoTable({
   variety,
   altitude,
   description,
-}: BeanInfoTableProps) {
+}: ProductInfoTableProps) {
   const infoItems = [
     { label: '원산지', value: origin },
     { label: '카테고리', value: category },

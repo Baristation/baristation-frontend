@@ -1,22 +1,22 @@
 import React from 'react';
 
+import { getMainDataAction } from '@/actions/main.action';
 import PageContainer from '@/components/layout/PageContainer';
-import AromaNotes from '@/components/main/AromaNotes';
+import FlavorNotes from '@/components/main/FlavorNotes';
 import HeroSection from '@/components/main/HeroSection';
-import RecommendedBeans from '@/components/main/RecommendedBeans';
+import RecommendedProducts from '@/components/main/RecommendedProducts';
 import RoasteryMapSection from '@/components/main/RoasteryMapSection';
-import { mockMainData } from '@/lib/api/main';
 
-export default function Home() {
-  // TODO: Use actual API fetch logic here when the backend is ready.
-  // For now, we are providing the mocked API data directly to the components.
-  const { aromas, recommendedBeans } = mockMainData;
+export default async function Home() {
+  const result = await getMainDataAction();
+  const flavors = result.success && result.data ? result.data.flavors : [];
+  const recommendedProducts = result.success && result.data ? result.data.recommendedProducts : [];
 
   return (
     <PageContainer withHeaderOffset={false}>
       <HeroSection />
-      <AromaNotes aromas={aromas} />
-      <RecommendedBeans beans={recommendedBeans} />
+      <FlavorNotes flavors={flavors} />
+      <RecommendedProducts products={recommendedProducts} />
       <RoasteryMapSection />
     </PageContainer>
   );

@@ -8,29 +8,29 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 import SectionContainer from '@/components/layout/SectionContainer';
-import { AROMA_BG_CLASS } from '@/lib/api/beans';
-import type { AromaType } from '@/lib/api/beans';
+import { FLAVOR_BG_CLASS } from '@/lib/api/products';
+import type { FlavorType } from '@/lib/api/products';
 import { cn } from '@/lib/utils';
 
-interface BeanDetailHeroProps {
+interface ProductDetailHeroProps {
   name: string;
   origin: string;
   roastery?: string;
-  aromaImageUrl: string;
-  primaryAroma: AromaType;
+  flavorImageUrl: string;
+  primaryFlavor: FlavorType;
   purchaseUrl?: string;
 }
 
-export function BeanDetailHero({
+export function ProductDetailHero({
   name,
   origin,
   roastery,
-  aromaImageUrl,
-  primaryAroma,
+  flavorImageUrl,
+  primaryFlavor,
   purchaseUrl,
-}: BeanDetailHeroProps) {
+}: ProductDetailHeroProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const bgClass = AROMA_BG_CLASS[primaryAroma] ?? 'bg-gray-100';
+  const bgClass = FLAVOR_BG_CLASS[primaryFlavor] ?? 'bg-gray-100';
 
   const handlePurchaseClick = () => {
     if (!purchaseUrl) {
@@ -106,7 +106,7 @@ export function BeanDetailHero({
 
       {/* Back Button */}
       <Link
-        href="/beans"
+        href="/products"
         className="group mb-4 flex w-fit items-center space-x-2 text-gray-500 transition-colors hover:text-gray-900"
         aria-label="원두 목록으로 돌아가기"
       >
@@ -126,8 +126,8 @@ export function BeanDetailHero({
           )}
         >
           <Image
-            src={aromaImageUrl}
-            alt={`${primaryAroma} 향미의 ${name} 대표 이미지`}
+            src={flavorImageUrl}
+            alt={`${primaryFlavor} 향미의 ${name} 대표 이미지`}
             fill
             className="object-cover transition-transform duration-1000 hover:scale-105"
             sizes="(max-width: 1024px) 100vw, 50vw"

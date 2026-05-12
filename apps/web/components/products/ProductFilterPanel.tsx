@@ -6,24 +6,24 @@ import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-reac
 import { useEffect, useState } from 'react';
 
 import {
-  AROMA_TYPES,
-  type AromaType,
+  FLAVOR_TYPES,
+  type FlavorType,
   DEFAULT_FILTERS,
-  type BeanFilterState,
-} from '@/lib/api/beans';
+  type ProductFilterState,
+} from '@/lib/api/products';
 
-import BeanSearchBar from './BeanSearchBar';
+import ProductSearchBar from './ProductSearchBar';
 
-interface BeanFilterPanelProps {
-  filters: BeanFilterState;
-  onChange: (filters: BeanFilterState) => void;
+interface ProductFilterPanelProps {
+  filters: ProductFilterState;
+  onChange: (filters: ProductFilterState) => void;
   onReset: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
 }
 
-const isFiltered = (filters: BeanFilterState) =>
-  filters.aromas.length > 0 ||
+const isFiltered = (filters: ProductFilterState) =>
+  filters.flavors.length > 0 ||
   filters.flavor.balance > 0 ||
   filters.flavor.sweetness > 0 ||
   filters.flavor.acidity > 0 ||
@@ -51,13 +51,13 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   );
 }
 
-export default function BeanFilterPanel({
+export default function ProductFilterPanel({
   filters,
   onChange,
   onReset,
   searchQuery,
   onSearchChange,
-}: BeanFilterPanelProps) {
+}: ProductFilterPanelProps) {
   const [localFilters, setLocalFilters] = useState(filters);
 
   useEffect(() => {
@@ -66,11 +66,11 @@ export default function BeanFilterPanel({
 
   const filtered = isFiltered(localFilters);
 
-  const toggleAroma = (aroma: AromaType) => {
-    const next = localFilters.aromas.includes(aroma)
-      ? localFilters.aromas.filter((a) => a !== aroma)
-      : [...localFilters.aromas, aroma];
-    setLocalFilters({ ...localFilters, aromas: next });
+  const toggleFlavor = (flavor: FlavorType) => {
+    const next = localFilters.flavors.includes(flavor)
+      ? localFilters.flavors.filter((a) => a !== flavor)
+      : [...localFilters.flavors, flavor];
+    setLocalFilters({ ...localFilters, flavors: next });
   };
 
   const handleApply = () => {
@@ -101,19 +101,19 @@ export default function BeanFilterPanel({
 
         {/* Search */}
         <div className="mb-6">
-          <BeanSearchBar value={searchQuery} onChange={onSearchChange} />
+          <ProductSearchBar value={searchQuery} onChange={onSearchChange} />
         </div>
 
-        {/* Aroma */}
+        {/* Flavor */}
         <div className="border-b border-gray-100 pb-5">
-          <p className={SECTION_TITLE}>Aroma</p>
+          <p className={SECTION_TITLE}>Flavor</p>
           <div className="flex flex-wrap gap-2">
-            {AROMA_TYPES.map((a) => (
+            {FLAVOR_TYPES.map((a) => (
               <Chip
                 key={a}
                 label={a}
-                active={localFilters.aromas.includes(a)}
-                onClick={() => toggleAroma(a)}
+                active={localFilters.flavors.includes(a)}
+                onClick={() => toggleFlavor(a)}
               />
             ))}
           </div>
@@ -182,7 +182,7 @@ export default function BeanFilterPanel({
               max={5}
               value={localFilters.body}
               onChange={(v) =>
-                setLocalFilters({ ...localFilters, body: v as BeanFilterState['body'] })
+                setLocalFilters({ ...localFilters, body: v as ProductFilterState['body'] })
               }
             />
           </div>
@@ -232,7 +232,7 @@ export default function BeanFilterPanel({
               value={localFilters.roasting}
               colorPalette="espresso"
               onChange={(v) =>
-                setLocalFilters({ ...localFilters, roasting: v as BeanFilterState['roasting'] })
+                setLocalFilters({ ...localFilters, roasting: v as ProductFilterState['roasting'] })
               }
             />
           </div>
