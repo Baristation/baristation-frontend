@@ -1,6 +1,34 @@
-import { AROMA_DEFINITIONS, type BeanInfo, mockBeansData } from './beans';
+import { type ProductInfo } from './products';
 
-export interface AromaNote {
+// Backend Response Types
+export interface MainFlavorResponse {
+  flavor_id: number;
+  flavor_name: string;
+  flavor_image_url: string;
+  flavor_link: string;
+}
+
+export interface MainProductResponse {
+  product_id: number;
+  product_name: string;
+  product_flavor: string[];
+  product_image_link: string;
+  product_link: string;
+}
+
+export interface MainApiResponseData {
+  flavors: MainFlavorResponse[];
+  products: MainProductResponse[];
+}
+
+export interface MainApiResponse {
+  statusCode: string;
+  message: string;
+  data: MainApiResponseData;
+}
+
+// Frontend Types
+export interface FlavorNote {
   id: string; // 영문 ID (예: 'caramel')
   name: string; // 한국어 명칭 (예: '캐러멜')
   imageUrl: string;
@@ -8,17 +36,17 @@ export interface AromaNote {
 }
 
 /**
- * RecommendedBean - 메인 페이지용 추천 원두 타입.
- * BeanInfo의 핵심 필드를 포함하여 BeanCard와 호환되도록 구성합니다.
+ * RecommendedProduct - 메인 페이지용 추천 원두 타입.
+ * ProductInfo의 핵심 필드를 포함하여 ProductCard와 호환되도록 구성합니다.
  */
-export interface RecommendedBean
+export interface RecommendedProduct
   extends Pick<
-    BeanInfo,
+    ProductInfo,
     | 'id'
     | 'name'
     | 'origin'
-    | 'primaryAroma'
-    | 'aromaImageUrl'
+    | 'primaryFlavor'
+    | 'flavorImageUrl'
     | 'link'
     | 'balance'
     | 'sweetness'
@@ -28,28 +56,6 @@ export interface RecommendedBean
   > {}
 
 export interface MainData {
-  aromas: AromaNote[];
-  recommendedBeans: RecommendedBean[];
+  flavors: FlavorNote[];
+  recommendedProducts: RecommendedProduct[];
 }
-
-export const mockMainData: MainData = {
-  aromas: AROMA_DEFINITIONS.map((def) => ({
-    id: def.id,
-    name: def.ko,
-    imageUrl: def.imageUrl,
-    link: `/beans?aromas=${def.id}`,
-  })),
-  recommendedBeans: mockBeansData.slice(0, 4).map((bean) => ({
-    id: bean.id,
-    name: bean.name,
-    origin: bean.origin,
-    primaryAroma: bean.primaryAroma,
-    aromaImageUrl: bean.aromaImageUrl,
-    link: `/beans/${bean.id}`,
-    balance: bean.balance,
-    sweetness: bean.sweetness,
-    acidity: bean.acidity,
-    body: bean.body,
-    roasting: bean.roasting,
-  })),
-};
