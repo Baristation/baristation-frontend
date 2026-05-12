@@ -13,16 +13,19 @@ interface BffInfo {
   isLocal: boolean;
 }
 
-function getBffInfo(request?: NextRequest): BffInfo {
+function getBffInfo(
+  request?: NextRequest,
+  overrides?: { host?: string; proto?: string; port?: string },
+): BffInfo {
   const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
   if (!backendUrl && typeof window === 'undefined') {
     throw new Error('[BFF] BACKEND_URL 환경변수가 설정되지 않았습니다.');
   }
 
-  let host = process.env.BFF_HOST || process.env.NEXT_PUBLIC_BFF_HOST;
-  let proto = process.env.BFF_PROTO || process.env.NEXT_PUBLIC_BFF_PROTO;
-  let port = process.env.BFF_PORT || process.env.NEXT_PUBLIC_BFF_PORT;
+  let host = overrides?.host;
+  let proto = overrides?.proto;
+  let port = overrides?.port;
 
   if (request) {
     const isSecure = request.nextUrl.protocol === 'https:';
@@ -36,9 +39,17 @@ function getBffInfo(request?: NextRequest): BffInfo {
     port = port || window.location.port || (isSecure ? '443' : '80');
   }
 
-  host = host || 'localhost:3000';
-  proto = (proto || 'http').replace(':', '');
-  port = port || '3000';
+  // 기본값 할당 (모든 탐지 실패 시)
+  host = host || 'localhost';
+  proto = proto || 'http';
+  port = port || (proto === 'https' ? '443' : '3000');
+
+  // 호스트 문자열에 포트가 포함된 경우(예: localhost:3000) 분리
+  if (host.includes(':')) {
+    const [h, p] = host.split(':');
+    host = h;
+    port = p;
+  }
 
   const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1') || proto === 'http';
 
@@ -107,8 +118,8 @@ export async function fetchBackend(
   options: RequestInit & { bffRequest?: NextRequest } = {},
 ): Promise<Response> {
   const { bffRequest, ...fetchOptions } = options;
-  const bffInfo = getBffInfo(bffRequest);
 
+  const dynamicOverrides: { host?: string; proto?: string; port?: string } = {};
   const extraHeaders: Record<string, string> = { Accept: 'application/json' };
 
   if (!bffRequest) {
@@ -116,6 +127,22 @@ export async function fetchBackend(
       const { cookies, headers } = await import('next/headers');
       const cookieList = await cookies();
       const headerList = await headers();
+
+      // 동적 호스트 및 프로토콜 감지 (Vercel/Next.js Proxy Headers 대응)
+      const host = headerList.get('x-forwarded-host') || headerList.get('host');
+      const proto = headerList.get('x-forwarded-proto');
+
+      if (host) {
+        dynamicOverrides.host = host;
+        // 호스트 문자열에 포트가 포함되어 있는지 확인
+        if (host.includes(':')) {
+          const [h, p] = host.split(':');
+          dynamicOverrides.host = h;
+          dynamicOverrides.port = p;
+        }
+      }
+      if (proto) dynamicOverrides.proto = proto.replace(':', '');
+
       const cookie = cookieList.toString();
       if (cookie) extraHeaders['Cookie'] = cookie;
       const ua = headerList.get('user-agent');
@@ -127,6 +154,8 @@ export async function fetchBackend(
     const cookie = bffRequest.headers.get('cookie');
     if (cookie) extraHeaders['Cookie'] = cookie;
   }
+
+  const bffInfo = getBffInfo(bffRequest, dynamicOverrides);
 
   const finalHeaders = buildBffHeaders(bffInfo, {
     ...extraHeaders,
