@@ -6,7 +6,6 @@ import PageContainer from '@/components/layout/PageContainer';
 import RecommendedProducts from '@/components/main/RecommendedProducts';
 import { mockProductsData } from '@/lib/api/products';
 
-import { FlavorProfileSection } from './_components/FlavorProfileSection';
 import { ProductDetailHero } from './_components/ProductDetailHero';
 import { ProductInfoTable } from './_components/ProductInfoTable';
 
@@ -89,13 +88,13 @@ export default async function ProductDetailPage({ params }: Props) {
         altitude={product.altitude}
         description={product.description}
       />
-      <FlavorProfileSection
+      {/* <FlavorProfileSection
         balance={product.balance || 0}
         sweetness={product.sweetness || 0}
         acidity={product.acidity || 0}
         body={product.body || 0}
         roasting={product.roasting || 0}
-      />
+      /> */}
       <RecommendedProducts products={recommendedProducts} />
     </PageContainer>
   );

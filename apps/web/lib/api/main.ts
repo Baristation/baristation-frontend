@@ -42,17 +42,7 @@ export interface FlavorNote {
 export interface RecommendedProduct
   extends Pick<
     ProductInfo,
-    | 'id'
-    | 'name'
-    | 'origin'
-    | 'primaryFlavor'
-    | 'flavorImageUrl'
-    | 'link'
-    | 'balance'
-    | 'sweetness'
-    | 'acidity'
-    | 'body'
-    | 'roasting'
+    'id' | 'name' | 'origin' | 'primaryFlavor' | 'flavorImageUrl' | 'link'
   > {}
 
 export interface MainData {

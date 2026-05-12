@@ -1,73 +1,15 @@
 'use client';
 
-import { RatingScale, VisualCard, type ColorPalette } from '@coffee-service/ui-library';
-import { Coffee, Droplets, Flame, Layers, Scale, Sparkles } from 'lucide-react';
+import { VisualCard } from '@coffee-service/ui-library';
+import { Coffee } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 import { FLAVOR_BG_CLASS, type ProductInfo } from '@/lib/api/products';
 
 interface ProductCardProps
-  extends Pick<
-    ProductInfo,
-    | 'id'
-    | 'name'
-    | 'origin'
-    | 'primaryFlavor'
-    | 'flavorImageUrl'
-    | 'balance'
-    | 'sweetness'
-    | 'acidity'
-    | 'roasting'
-    | 'body'
-  > {
+  extends Pick<ProductInfo, 'id' | 'name' | 'origin' | 'primaryFlavor' | 'flavorImageUrl'> {
   index?: number;
-}
-
-/**
- * 맛 지표를 표시하는 내부 컴포넌트
- */
-function ProfileIndicator({
-  label,
-  value,
-  max = 5,
-  colorPalette = 'amber',
-}: {
-  label: string;
-  value: number;
-  max?: number;
-  colorPalette?: ColorPalette;
-}) {
-  const Icon =
-    label === 'Acidity'
-      ? Droplets
-      : label === 'Sweetness'
-        ? Sparkles
-        : label === 'Body'
-          ? Layers
-          : label === 'Balance'
-            ? Scale
-            : Flame;
-
-  return (
-    <div className="flex w-[110px] items-center justify-between md:w-[150px]">
-      <div className="flex items-center gap-1.5 md:gap-2">
-        <Icon className="h-2.5 w-2.5 text-white/40 md:h-3 md:w-3" />
-        <span className="font-outfit text-left text-[8px] font-medium tracking-wider text-white/50 uppercase md:text-[10px]">
-          {label === 'Roast' ? 'Roasting' : label}
-        </span>
-      </div>
-      {/* RatingScale 공통 컴포넌트의 'indicator' 변체와 readOnly 속성을 사용하여 접근성 보강 */}
-      <RatingScale
-        max={max}
-        value={value}
-        variant="indicator"
-        readOnly
-        colorPalette={colorPalette}
-        className="w-[40px] md:w-[60px]"
-      />
-    </div>
-  );
 }
 
 /**
@@ -80,11 +22,6 @@ export default function ProductCard({
   origin,
   primaryFlavor,
   flavorImageUrl,
-  balance,
-  sweetness,
-  acidity,
-  roasting,
-  body,
 }: ProductCardProps) {
   const bgClass = FLAVOR_BG_CLASS[primaryFlavor] ?? 'bg-gray-100';
 
@@ -121,18 +58,6 @@ export default function ProductCard({
                 <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/5 backdrop-blur-sm md:h-10 md:w-10">
                   <Coffee className="h-4 w-4 text-white/80 md:h-5 md:w-5" />
                 </div>
-              </div>
-
-              <div className="space-y-2 md:space-y-3">
-                <ProfileIndicator label="Acidity" value={acidity} />
-                <ProfileIndicator label="Sweetness" value={sweetness} />
-                <ProfileIndicator label="Body" value={body} />
-                <ProfileIndicator
-                  label="Balance"
-                  value={balance}
-                  colorPalette={balance <= 2 ? 'red' : balance === 3 ? 'blue' : 'green'}
-                />
-                <ProfileIndicator label="Roast" value={roasting} colorPalette="espresso" />
               </div>
             </div>
           </div>

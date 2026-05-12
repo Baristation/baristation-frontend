@@ -48,11 +48,6 @@ export async function getMainDataAction(): Promise<{ success: boolean; data?: Ma
         : '캐러멜') as FlavorType,
       flavorImageUrl: p.product_image_link || '/images/default-product.png',
       link: p.product_link,
-      balance: 3,
-      sweetness: 3,
-      acidity: 3,
-      body: 3,
-      roasting: 3,
     }));
 
     return {
