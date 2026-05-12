@@ -129,19 +129,19 @@ export async function fetchBackend(
       const headerList = await headers();
 
       // 동적 호스트 및 프로토콜 감지 (Vercel/Next.js Proxy Headers 대응)
-      const host = headerList.get('x-forwarded-host') || headerList.get('host');
-      const proto = headerList.get('x-forwarded-proto');
+      const hostValue = headerList.get('x-forwarded-host') || headerList.get('host');
+      const protoValue = headerList.get('x-forwarded-proto');
 
-      if (host) {
-        dynamicOverrides.host = host;
-        // 호스트 문자열에 포트가 포함되어 있는지 확인
-        if (host.includes(':')) {
-          const [h, p] = host.split(':');
-          dynamicOverrides.host = h;
-          dynamicOverrides.port = p;
-        }
+      if (hostValue) {
+        // Multi-proxy 체인 대응: 첫 번째 호스트 사용
+        dynamicOverrides.host = hostValue.split(',')[0].trim();
       }
-      if (proto) dynamicOverrides.proto = proto.replace(':', '');
+
+      if (protoValue) {
+        // Multi-proxy 체인 대응: 마지막 프로토콜 사용
+        const protos = protoValue.split(',');
+        dynamicOverrides.proto = protos[protos.length - 1].trim().replace(':', '');
+      }
 
       const cookie = cookieList.toString();
       if (cookie) extraHeaders['Cookie'] = cookie;
