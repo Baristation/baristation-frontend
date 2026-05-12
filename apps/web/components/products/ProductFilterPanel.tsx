@@ -1,6 +1,6 @@
 'use client';
 
-import { RatingScale } from '@coffee-service/ui-library';
+import { RangeSlider } from '@coffee-service/ui-library';
 import { motion } from 'framer-motion';
 import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -24,11 +24,16 @@ interface ProductFilterPanelProps {
 
 const isFiltered = (filters: ProductFilterState) =>
   filters.flavors.length > 0 ||
-  filters.flavor.balance > 0 ||
-  filters.flavor.sweetness > 0 ||
-  filters.flavor.acidity > 0 ||
-  filters.body > 0 ||
-  filters.roasting > 0;
+  filters.flavor.balance[0] !== 1 ||
+  filters.flavor.balance[1] !== 5 ||
+  filters.flavor.sweetness[0] !== 1 ||
+  filters.flavor.sweetness[1] !== 10 ||
+  filters.flavor.acidity[0] !== 1 ||
+  filters.flavor.acidity[1] !== 10 ||
+  filters.body[0] !== 1 ||
+  filters.body[1] !== 5 ||
+  filters.roasting[0] !== 1 ||
+  filters.roasting[1] !== 5;
 
 const SECTION_TITLE =
   'font-outfit mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500';
@@ -127,16 +132,22 @@ export default function ProductFilterPanel({
               <Droplets className="h-3 w-3" />
               Acidity
             </p>
-            <RatingScale
-              max={5}
+            <RangeSlider
+              min={1}
+              max={10}
+              step={1}
               value={localFilters.flavor.acidity}
-              onChange={(v) =>
+              onValueChange={(v) =>
                 setLocalFilters({
                   ...localFilters,
-                  flavor: { ...localFilters.flavor, acidity: v },
+                  flavor: { ...localFilters.flavor, acidity: [v[0], v[1]] },
                 })
               }
             />
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{localFilters.flavor.acidity[0]}</span>
+              <span>{localFilters.flavor.acidity[1]}</span>
+            </div>
           </div>
 
           {/* Sweetness */}
@@ -145,46 +156,41 @@ export default function ProductFilterPanel({
               <Sparkles className="h-3 w-3" />
               Sweetness
             </p>
-            <RatingScale
-              max={5}
+            <RangeSlider
+              min={1}
+              max={10}
+              step={1}
               value={localFilters.flavor.sweetness}
-              onChange={(v) =>
+              onValueChange={(v) =>
                 setLocalFilters({
                   ...localFilters,
-                  flavor: { ...localFilters.flavor, sweetness: v },
+                  flavor: { ...localFilters.flavor, sweetness: [v[0], v[1]] },
                 })
               }
             />
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{localFilters.flavor.sweetness[0]}</span>
+              <span>{localFilters.flavor.sweetness[1]}</span>
+            </div>
           </div>
 
           {/* Body */}
           <div className="border-b border-gray-100 pb-4">
-            <div className="flex items-center justify-between">
-              <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-                <Layers className="h-3 w-3" />
-                Body
-              </p>
-              <p className="text-xs text-gray-400">
-                {localFilters.body === 1
-                  ? 'Very Light'
-                  : localFilters.body === 2
-                    ? 'Light'
-                    : localFilters.body === 3
-                      ? 'Medium'
-                      : localFilters.body === 4
-                        ? 'Full'
-                        : localFilters.body === 5
-                          ? 'Extra Bold'
-                          : ''}
-              </p>
-            </div>
-            <RatingScale
+            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
+              <Layers className="h-3 w-3" />
+              Body
+            </p>
+            <RangeSlider
+              min={1}
               max={5}
+              step={1}
               value={localFilters.body}
-              onChange={(v) =>
-                setLocalFilters({ ...localFilters, body: v as ProductFilterState['body'] })
-              }
+              onValueChange={(v) => setLocalFilters({ ...localFilters, body: [v[0], v[1]] })}
             />
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{localFilters.body[0]}</span>
+              <span>{localFilters.body[1]}</span>
+            </div>
           </div>
 
           {/* Balance */}
@@ -193,48 +199,43 @@ export default function ProductFilterPanel({
               <Scale className="h-3 w-3" />
               Balance
             </p>
-            <RatingScale
+            <RangeSlider
+              min={1}
               max={5}
+              step={1}
               value={localFilters.flavor.balance}
               colorPalette="teal"
-              onChange={(v) =>
+              onValueChange={(v) =>
                 setLocalFilters({
                   ...localFilters,
-                  flavor: { ...localFilters.flavor, balance: v },
+                  flavor: { ...localFilters.flavor, balance: [v[0], v[1]] },
                 })
               }
             />
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{localFilters.flavor.balance[0]}</span>
+              <span>{localFilters.flavor.balance[1]}</span>
+            </div>
           </div>
 
           {/* Roasting */}
           <div className="pb-4">
-            <div className="flex items-center justify-between">
-              <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-                <Flame className="h-3 w-3" />
-                Roasting
-              </p>
-              <p className="text-xs text-gray-400">
-                {localFilters.roasting === 1
-                  ? 'Light'
-                  : localFilters.roasting === 2
-                    ? 'Light Medium'
-                    : localFilters.roasting === 3
-                      ? 'Medium'
-                      : localFilters.roasting === 4
-                        ? 'Medium Dark'
-                        : localFilters.roasting === 5
-                          ? 'Dark'
-                          : ''}
-              </p>
-            </div>
-            <RatingScale
+            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
+              <Flame className="h-3 w-3" />
+              Roasting
+            </p>
+            <RangeSlider
+              min={1}
               max={5}
+              step={1}
               value={localFilters.roasting}
               colorPalette="espresso"
-              onChange={(v) =>
-                setLocalFilters({ ...localFilters, roasting: v as ProductFilterState['roasting'] })
-              }
+              onValueChange={(v) => setLocalFilters({ ...localFilters, roasting: [v[0], v[1]] })}
             />
+            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+              <span>{localFilters.roasting[0]}</span>
+              <span>{localFilters.roasting[1]}</span>
+            </div>
           </div>
         </div>
       </div>

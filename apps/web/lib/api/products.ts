@@ -213,19 +213,19 @@ export interface ProductInfo {
 export interface ProductFilterState {
   flavors: FlavorType[];
   flavor: {
-    balance: number; // 0 = 미선택
-    sweetness: number;
-    acidity: number;
+    balance: [number, number];
+    sweetness: [number, number];
+    acidity: [number, number];
   };
-  body: 0 | 1 | 2 | 3 | 4 | 5; // 0 = 미선택
-  roasting: 0 | 1 | 2 | 3 | 4 | 5; // 0 = 미선택
+  body: [number, number];
+  roasting: [number, number];
 }
 
 export const DEFAULT_FILTERS: ProductFilterState = {
   flavors: [],
-  flavor: { balance: 0, sweetness: 0, acidity: 0 },
-  body: 0,
-  roasting: 0,
+  flavor: { balance: [1, 5], sweetness: [1, 10], acidity: [1, 10] },
+  body: [1, 5],
+  roasting: [1, 5],
 };
 
 /** FlavorType → Tailwind 배경 클래스 매핑 */
@@ -268,11 +268,15 @@ export function encodeFiltersToParams(
     if (flavorCodes) params.set('flavors', flavorCodes);
   }
 
-  if (filters.flavor.balance > 0) params.set('balance', filters.flavor.balance.toString());
-  if (filters.flavor.sweetness > 0) params.set('sweetness', filters.flavor.sweetness.toString());
-  if (filters.flavor.acidity > 0) params.set('acidity', filters.flavor.acidity.toString());
-  if (filters.body > 0) params.set('body', filters.body.toString());
-  if (filters.roasting > 0) params.set('roasting', filters.roasting.toString());
+  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5)
+    params.set('balance', filters.flavor.balance.join('-'));
+  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 10)
+    params.set('sweetness', filters.flavor.sweetness.join('-'));
+  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 10)
+    params.set('acidity', filters.flavor.acidity.join('-'));
+  if (filters.body[0] !== 1 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
+  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5)
+    params.set('roasting', filters.roasting.join('-'));
 
   if (searchQuery.trim()) params.set('q', searchQuery.trim());
 
@@ -299,18 +303,20 @@ export function mapFiltersToApiRequest(
     if (mappedCategory) req.flavorCategory = mappedCategory;
   }
 
-  if (filters.flavor.acidity > 0) {
-    req.minAcidity = filters.flavor.acidity;
-    req.maxAcidity = filters.flavor.acidity;
+  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 10) {
+    req.minAcidity = filters.flavor.acidity[0];
+    req.maxAcidity = filters.flavor.acidity[1];
   }
 
-  if (filters.flavor.sweetness > 0) {
-    req.minSweetness = filters.flavor.sweetness;
-    req.maxSweetness = filters.flavor.sweetness;
+  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 10) {
+    req.minSweetness = filters.flavor.sweetness[0];
+    req.maxSweetness = filters.flavor.sweetness[1];
   }
 
-  if (filters.body > 0) {
-    req.body = filters.body;
+  // 바디감은 현재 단일 값만 API 명세에 명시되어 있으나, 만약 min/max가 생기면 확장이 필요할 수 있습니다.
+  // API 스펙 상 바디는 단일 값이므로, 평균값 혹은 범위를 벗어났을 때만 할당하도록 보수적으로 접근
+  if (filters.body[0] === filters.body[1]) {
+    req.body = filters.body[0];
   }
 
   return req;
@@ -326,6 +332,8 @@ export function decodeParamsToFilters(params: URLSearchParams): {
     ...DEFAULT_FILTERS,
     flavors: [...DEFAULT_FILTERS.flavors],
     flavor: { ...DEFAULT_FILTERS.flavor },
+    body: [...DEFAULT_FILTERS.body],
+    roasting: [...DEFAULT_FILTERS.roasting],
   };
 
   // flavors 파라미터 처리
@@ -337,18 +345,27 @@ export function decodeParamsToFilters(params: URLSearchParams): {
       .filter(Boolean) as FlavorType[];
   }
 
-  const b = params.get('balance');
-  const s = params.get('sweetness');
-  const a = params.get('acidity');
-  if (b) filters.flavor.balance = parseInt(b, 10);
-  if (s) filters.flavor.sweetness = parseInt(s, 10);
-  if (a) filters.flavor.acidity = parseInt(a, 10);
+  const parseRange = (val: string | null): [number, number] | null => {
+    if (!val) return null;
+    const parts = val.split('-');
+    if (parts.length === 2) {
+      return [parseInt(parts[0], 10), parseInt(parts[1], 10)];
+    }
+    return null;
+  };
 
-  const body = params.get('body');
-  if (body) filters.body = parseInt(body, 10) as ProductFilterState['body'];
+  const b = parseRange(params.get('balance'));
+  const s = parseRange(params.get('sweetness'));
+  const a = parseRange(params.get('acidity'));
+  if (b) filters.flavor.balance = b;
+  if (s) filters.flavor.sweetness = s;
+  if (a) filters.flavor.acidity = a;
 
-  const roasting = params.get('roasting');
-  if (roasting) filters.roasting = parseInt(roasting, 10) as ProductFilterState['roasting'];
+  const body = parseRange(params.get('body'));
+  if (body) filters.body = body;
+
+  const roasting = parseRange(params.get('roasting'));
+  if (roasting) filters.roasting = roasting;
 
   const searchQuery = params.get('q') || '';
 
