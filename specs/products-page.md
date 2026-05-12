@@ -486,7 +486,7 @@ const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 - **아로마 색상 시스템**: `FlavorColor Palette` 토큰으로 카드 배경 색상을 일관성 있게 관리
 - **명시적 지연 반영(Deferred)**: 필터 상태는 즉시 반영되지 않고 '적용하기' 버튼에 의해 제출되어야 한다
 - **모바일 Drawer**: 모바일에서 필터가 Drawer로 동작하여 탐색 공간을 최대화
-- **Mock 지원**: 백엔드 없이 `mockProductsData`로 전체 UI 동작 검증 가능
+- **API 연동**: 백엔드의 `/api/products/search` 엔드포인트를 통해 데이터를 페칭하며, 이미지 부재 시 향미 이미지(`flavorImageUrl`)를 우선 노출하는 Fallback 로직 적용
 
 ---
 
@@ -494,33 +494,40 @@ const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
 ### 상황
 
-> 원두 목록 조회 (필터·검색 파라미터 포함)
+> 상품(원두) 목록 조회 (필터·검색 및 페이지네이션 포함)
 
 ### Request
 
 ```http
-GET /api/products?search={keyword}&flavors={}&balance={1-5}&sweetness={1-5}&acidity={1-5}&body={1-5}&roasting={1-5}
+GET /api/products/search?keyword={keyword}&flavorCategory={category}&minAcidity={1-10}&maxAcidity={1-10}&minSweetness={1-10}&maxSweetness={1-10}&body={1-5}&page={0}&size={12}
 ```
 
-| Query Parameter | Type       | Description        | 필수 |
-| --------------- | ---------- | ------------------ | ---- |
-| `search`        | `string`   | 검색 키워드        | ✗    |
-| `flavors`       | `string[]` | 아로마 필터 (다중) | ✗    |
-| `balance`       | `number`   | 밸런스 1~5         | ✗    |
-| `sweetness`     | `number`   | 단맛 1~5           | ✗    |
-| `acidity`       | `number`   | 산미 1~5           | ✗    |
-| `body`          | `number`   | 바디감 1~5         | ✗    |
-| `roasting`      | `number`   | 로스팅 1~5         | ✗    |
+| Query Parameter  | Type     | Description                            | 필수 |
+| ---------------- | -------- | -------------------------------------- | ---- |
+| `keyword`        | `string` | 원두명 / 생산지 / 로스터명 키워드 검색 | ✗    |
+| `flavorCategory` | `string` | 맛 카테고리 (FRUITY, NUTTY 등 Enum)    | ✗    |
+| `minAcidity`     | `number` | 산미 최소값 (1~10)                     | ✗    |
+| `maxAcidity`     | `number` | 산미 최대값 (1~10)                     | ✗    |
+| `minSweetness`   | `number` | 단맛 최소값 (1~10)                     | ✗    |
+| `maxSweetness`   | `number` | 단맛 최대값 (1~10)                     | ✗    |
+| `body`           | `number` | 바디감 1~5                             | ✗    |
+| `page`           | `number` | 페이지 번호 (0부터 시작)               | ✗    |
+| `size`           | `number` | 한 페이지 당 아이템 수 (기본 12)       | ✗    |
 
 ### Response Body
 
 ```ts
-interface ProductsResponse {
+interface ProductSearchResponse {
   statusCode: string;
   message: string;
   data: {
-    products: ProductInfo[];
-    total: number;
+    content: ProductSearchItem[]; // 향미/이미지 정보 포함 상품 리스트
+    totalPages: number;
+    totalElements: number;
+    currentPage: number;
+    size: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
   };
 }
 ```

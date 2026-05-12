@@ -1,4 +1,104 @@
-// Temporary Mock Data for Products Page until backend API is ready
+// API Types for Products Page
+
+export interface FlavorNoteDTO {
+  flavorNoteId: number;
+  flavorCategory: string;
+  nameKo: string;
+  nameEn: string;
+  flavorImageUrl: string;
+}
+
+export interface ProductImageDTO {
+  productImageId: number;
+  imageType: string;
+  imageUrl: string;
+  sortOrder: number;
+}
+
+export interface ProductSearchItem {
+  productId: number;
+  beanNameKo: string;
+  beanNameEn: string;
+  origin: string;
+  region: string;
+  process: string;
+  productImage: ProductImageDTO | null;
+  flavorNotes: FlavorNoteDTO;
+}
+
+export interface PageInfo {
+  currentPage: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ProductSearchResponse {
+  statusCode: string;
+  message: string;
+  data: {
+    content: ProductSearchItem[];
+    totalPages: number;
+    totalElements: number;
+    currentPage: number;
+    size: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+}
+
+export interface ProductSearchRequest {
+  keyword?: string;
+  flavorCategory?: string;
+  minAcidity?: number;
+  maxAcidity?: number;
+  minSweetness?: number;
+  maxSweetness?: number;
+  minBitterness?: number;
+  maxBitterness?: number;
+  body?: number;
+  roastingType?: string;
+  sortBy?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export const FLAVOR_CATEGORY_MAP: Record<string, string> = {
+  캐러멜: 'BROWN_SUGAR',
+  와인: 'WINE',
+  초콜릿: 'CHOCOLATY',
+  과일: 'FRUITY',
+  허브: 'HERBAL',
+  맥아: 'MALTY',
+  견과: 'NUTTY',
+  꽃: 'FLORAL',
+  스모키: 'SMOKY',
+};
+
+export function mapSearchItemToProductInfo(item: ProductSearchItem): ProductInfo {
+  // 상품 이미지가 없을 경우 향미 이미지를 보여주도록 설정
+  const imageUrl =
+    item.productImage?.imageUrl ||
+    item.flavorNotes?.flavorImageUrl ||
+    '/images/default-product.png';
+
+  return {
+    id: item.productId,
+    name: item.beanNameKo,
+    origin: item.origin,
+    primaryFlavor: (item.flavorNotes?.nameKo as FlavorType) || '캐러멜',
+    flavorImageUrl: imageUrl,
+    roasting: 3,
+    body: 3,
+    balance: 3,
+    sweetness: 3,
+    acidity: 3,
+    link: `/products/${item.productId}`,
+  };
+}
 
 export interface FlavorDefinition {
   id: string; // 영문 ID (예: 'caramel')
@@ -153,237 +253,6 @@ export function getFlavorByKoName(ko: string) {
   return FLAVOR_DEFINITIONS.find((def) => def.ko === ko);
 }
 
-export const mockProductsData: ProductInfo[] = [
-  {
-    id: 1,
-    name: 'Colombia Aristides Guarnizo',
-    origin: 'HUILA, COLOMBIA',
-    primaryFlavor: '과일',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1568815783141-792f9dcc32fd?q=80&w=600&auto=format&fit=crop',
-    roasting: 2,
-    body: 1,
-    acidity: 5,
-    balance: 4,
-    sweetness: 3,
-    link: '/products/1',
-    description:
-      '안티오키아의 풍부한 화산재 토양에서 자란 이 원두는 복숭아와 리치의 화사한 산미가 특징입니다.',
-    roastery: 'Baristation Lab',
-    processing: 'Washed',
-    variety: 'Caturra',
-    altitude: '1,850m',
-    category: 'Single Origin',
-    blend: false,
-    purchaseUrl: 'https://example.com/buy',
-    recipe: {
-      method: 'Hario V60',
-      ratio: '20g coffee : 300g water',
-      temp: '93°C',
-      grind: 'Medium-Fine',
-      notes: '초반 뜸들이기 시간을 충분히 가져가면 복숭아의 단맛을 극대화할 수 있습니다.',
-    },
-  },
-  {
-    id: 2,
-    name: 'Ethiopia Yirgacheffe Aricha',
-    origin: 'YIRGACHEFFE, ETHIOPIA',
-    primaryFlavor: '꽃',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1612380635121-411eda9ecbb9?q=80&w=600&auto=format&fit=crop',
-    roasting: 1,
-    body: 2,
-    acidity: 4,
-    balance: 5,
-    sweetness: 2,
-    link: '/products/2',
-    description:
-      '에티오피아 최고 고도에서 자란 이가체프 아리차는 베리류의 달콤함과 자스민의 향긋함이 어우러진 원두입니다.',
-    roastery: 'Flavor Roasters',
-    processing: 'Natural',
-    variety: 'Heirloom',
-    altitude: '2,100m',
-    recipe: {
-      method: 'Kalita Wave',
-      ratio: '18g coffee : 280g water',
-      temp: '91°C',
-      grind: 'Medium',
-      notes: '빠른 추출 속도를 유지하여 자스민의 섬세한 향을 살려보세요.',
-    },
-  },
-  {
-    id: 3,
-    name: 'Kenya AA Tatu N',
-    origin: 'NYERI, KENYA',
-    primaryFlavor: '과일',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1639588473831-dd9d014646ae?q=80&w=600&auto=format&fit=crop',
-    roasting: 3,
-    body: 3,
-    balance: 4,
-    sweetness: 3,
-    acidity: 4,
-    link: '/products/3',
-  },
-  {
-    id: 4,
-    name: 'Guatemala El Injerto Bourbon',
-    origin: 'HUEHUETENANGO, GUATEMALA',
-    primaryFlavor: '초콜릿',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1571091799989-e88304d6aed3?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    roasting: 4,
-    body: 4,
-    balance: 3,
-    sweetness: 4,
-    acidity: 2,
-    link: '/products/4',
-  },
-  {
-    id: 5,
-    name: 'Brazil Sul de Minas Peaberry',
-    origin: 'SUL DE MINAS, BRAZIL',
-    primaryFlavor: '캐러멜',
-    flavorImageUrl:
-      'https://plus.unsplash.com/premium_photo-1695865411429-fc175f8d408d?q=80&w=688&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    roasting: 3,
-    body: 5,
-    balance: 4,
-    sweetness: 5,
-    acidity: 1,
-    link: '/products/5',
-  },
-  {
-    id: 6,
-    name: 'Sumatra Mandheling G1',
-    origin: 'NORTH SUMATRA, INDONESIA',
-    primaryFlavor: '스모키',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1621460244277-7038c21f2f32?q=80&w=600&auto=format&fit=crop',
-    roasting: 5,
-    body: 5,
-    balance: 2,
-    sweetness: 2,
-    acidity: 1,
-    link: '/products/6',
-  },
-  {
-    id: 7,
-    name: 'Panama Geisha Elida Estate',
-    origin: 'BOQUETE, PANAMA',
-    primaryFlavor: '꽃',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=600&auto=format&fit=crop',
-    roasting: 1,
-    body: 1,
-    balance: 5,
-    sweetness: 4,
-    acidity: 5,
-    link: '/products/7',
-  },
-  {
-    id: 8,
-    name: 'Yemen Mocha Matari',
-    origin: 'BANI MATAR, YEMEN',
-    primaryFlavor: '와인',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1474722883778-792e7990302f?q=80&w=691&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    roasting: 3,
-    body: 2,
-    balance: 4,
-    sweetness: 3,
-    acidity: 3,
-    link: '/products/8',
-  },
-  {
-    id: 9,
-    name: 'Costa Rica Tarrazu La Minita',
-    origin: 'TARRAZU, COSTA RICA',
-    primaryFlavor: '허브',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1471193945509-9ad0617afabf?q=80&w=600&auto=format&fit=crop',
-    roasting: 2,
-    body: 3,
-    balance: 4,
-    sweetness: 3,
-    acidity: 3,
-    link: '/products/9',
-  },
-  {
-    id: 10,
-    name: 'Honduras Marcala SHG',
-    origin: 'MARCALA, HONDURAS',
-    primaryFlavor: '맥아',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1733276478182-4cc629dadd39?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    roasting: 3,
-    body: 3,
-    balance: 3,
-    sweetness: 3,
-    acidity: 2,
-    link: '/products/10',
-  },
-  {
-    id: 11,
-    name: 'Rwanda Huye Mountain',
-    origin: 'HUYE, RWANDA',
-    primaryFlavor: '견과',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1508779018996-601e37fa274e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    roasting: 2,
-    body: 2,
-    balance: 4,
-    sweetness: 4,
-    acidity: 3,
-    link: '/products/11',
-  },
-  {
-    id: 12,
-    name: 'Peru Villa Rica Organic',
-    origin: 'CHANCHAMAYO, PERU',
-    primaryFlavor: '초콜릿',
-    flavorImageUrl:
-      'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?q=80&w=600&auto=format&fit=crop',
-    roasting: 5,
-    body: 4,
-    balance: 3,
-    sweetness: 3,
-    acidity: 2,
-    link: '/products/12',
-  },
-];
-
-/** 클라이언트 사이드 필터 적용 함수 */
-export function applyProductFilters(
-  products: ProductInfo[],
-  filters: ProductFilterState,
-  searchQuery: string,
-): ProductInfo[] {
-  return products.filter((product) => {
-    // 검색어 필터
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      if (!product.name.toLowerCase().includes(q) && !product.origin.toLowerCase().includes(q)) {
-        return false;
-      }
-    }
-    // 아로마 필터 (다중 선택 → OR 조건)
-    if (filters.flavors.length > 0 && !filters.flavors.includes(product.primaryFlavor)) {
-      return false;
-    }
-    // Flavor 필터 (선택된 값과 일치하는 product만 표시)
-    if (filters.flavor.balance > 0 && product.balance !== filters.flavor.balance) return false;
-    if (filters.flavor.sweetness > 0 && product.sweetness !== filters.flavor.sweetness)
-      return false;
-    if (filters.flavor.acidity > 0 && product.acidity !== filters.flavor.acidity) return false;
-    // 바디감 필터
-    if (filters.body > 0 && product.body !== filters.body) return false;
-    // 로스팅 필터
-    if (filters.roasting > 0 && product.roasting !== filters.roasting) return false;
-    return true;
-  });
-}
-
 /** 필터 상태를 URL Query String으로 인코딩 */
 export function encodeFiltersToParams(
   filters: ProductFilterState,
@@ -408,6 +277,43 @@ export function encodeFiltersToParams(
   if (searchQuery.trim()) params.set('q', searchQuery.trim());
 
   return params;
+}
+
+/**
+ * 클라이언트의 필터 상태를 백엔드 API 요청 파라미터로 변환합니다.
+ */
+export function mapFiltersToApiRequest(
+  filters: ProductFilterState,
+  searchQuery: string,
+  page: number = 0,
+  size: number = 12,
+): ProductSearchRequest {
+  const req: ProductSearchRequest = { page, size };
+
+  if (searchQuery.trim()) {
+    req.keyword = searchQuery.trim();
+  }
+
+  if (filters.flavors.length > 0) {
+    const mappedCategory = FLAVOR_CATEGORY_MAP[filters.flavors[0] as string];
+    if (mappedCategory) req.flavorCategory = mappedCategory;
+  }
+
+  if (filters.flavor.acidity > 0) {
+    req.minAcidity = filters.flavor.acidity;
+    req.maxAcidity = filters.flavor.acidity;
+  }
+
+  if (filters.flavor.sweetness > 0) {
+    req.minSweetness = filters.flavor.sweetness;
+    req.maxSweetness = filters.flavor.sweetness;
+  }
+
+  if (filters.body > 0) {
+    req.body = filters.body;
+  }
+
+  return req;
 }
 
 /** URL Query String을 필터 상태로 디코딩 */
