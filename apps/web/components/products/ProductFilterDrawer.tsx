@@ -1,3 +1,4 @@
+'use client';
 import { AnimatePresence, motion, useDragControls } from 'framer-motion';
 import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';

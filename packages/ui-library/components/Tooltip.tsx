@@ -15,6 +15,7 @@ export function Tooltip({ content, children, delay = 0.2 }: TooltipProps) {
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const id = useRef(`tooltip-${Math.random().toString(36).slice(2, 9)}`);
 
   const updateCoords = () => {
     if (triggerRef.current) {
@@ -38,6 +39,15 @@ export function Tooltip({ content, children, delay = 0.2 }: TooltipProps) {
     setIsVisible(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setIsVisible(true);
+    } else if (e.key === 'Escape') {
+      setIsVisible(false);
+    }
+  };
+
   useEffect(() => {
     // Also update on scroll/resize if visible
     const handleUpdate = () => {
@@ -57,12 +67,17 @@ export function Tooltip({ content, children, delay = 0.2 }: TooltipProps) {
       ref={triggerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="relative inline-block"
+      onFocus={handleMouseEnter}
+      onBlur={handleMouseLeave}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      aria-describedby={isVisible ? id.current : undefined}
+      className="relative inline-block focus:outline-none"
     >
       {children}
       <AnimatePresence>
         {isVisible && (
-          <TooltipPortal x={coords.x} y={coords.y}>
+          <TooltipPortal id={id.current} x={coords.x} y={coords.y}>
             {content}
           </TooltipPortal>
         )}
@@ -71,7 +86,17 @@ export function Tooltip({ content, children, delay = 0.2 }: TooltipProps) {
   );
 }
 
-function TooltipPortal({ x, y, children }: { x: number; y: number; children: React.ReactNode }) {
+function TooltipPortal({
+  id,
+  x,
+  y,
+  children,
+}: {
+  id: string;
+  x: number;
+  y: number;
+  children: React.ReactNode;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -79,6 +104,8 @@ function TooltipPortal({ x, y, children }: { x: number; y: number; children: Rea
 
   return createPortal(
     <motion.div
+      id={id}
+      role="tooltip"
       initial={{ opacity: 0, scale: 0.95, x: '-50%', y: '-100%' }}
       animate={{ opacity: 1, scale: 1, x: '-50%', y: '-100%', marginTop: -10 }}
       exit={{ opacity: 0, scale: 0.95, x: '-50%', y: '-100%' }}

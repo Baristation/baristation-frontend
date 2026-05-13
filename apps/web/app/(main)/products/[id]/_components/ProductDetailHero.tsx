@@ -43,12 +43,27 @@ export function ProductDetailHero({
   const DEFAULT_IMAGE = '/images/default-product.png';
   const currentImage = allImages[currentImageIndex];
 
+  const getSanitizedUrl = (url: string | null) => {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return url;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const sanitizedUrl = getSanitizedUrl(roaster.homepageUrl);
+
   const handlePurchaseClick = () => {
-    if (!roaster.homepageUrl) {
-      alert('구매처 링크를 준비 중입니다.');
+    if (!sanitizedUrl) {
+      alert('구매처 링크가 유효하지 않거나 준비 중입니다.');
       return;
     }
-    window.open(roaster.homepageUrl, '_blank', 'noopener,noreferrer');
+    window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -63,6 +78,8 @@ export function ProductDetailHero({
             variant="outline"
             size="icon"
             onClick={() => setIsBookmarked(!isBookmarked)}
+            aria-label={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
+            title={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
             className="h-10 w-10 border-gray-100 bg-white/90 shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
           >
             <Bookmark
@@ -75,6 +92,8 @@ export function ProductDetailHero({
           <Button
             variant="outline"
             size="icon"
+            aria-label="Share product"
+            title="Share product"
             className="h-10 w-10 border-gray-100 bg-white/90 text-gray-300 shadow-sm backdrop-blur-sm"
             disabled
           >
@@ -150,11 +169,12 @@ export function ProductDetailHero({
                 <span className="font-outfit text-xs font-semibold tracking-widest text-amber-600 uppercase">
                   {roaster.nameKo}
                 </span>
-                {roaster.homepageUrl && (
+                {sanitizedUrl && (
                   <Link
-                    href={roaster.homepageUrl}
+                    href={sanitizedUrl}
                     target="_blank"
                     className="text-gray-400 hover:text-gray-600"
+                    aria-label="Visit roaster website"
                   >
                     <Globe className="h-3.5 w-3.5" />
                   </Link>
@@ -235,6 +255,8 @@ export function ProductDetailHero({
                   variant="outline"
                   size="icon"
                   onClick={() => setIsBookmarked(!isBookmarked)}
+                  aria-label={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
+                  title={isBookmarked ? 'Remove from bookmarks' : 'Add to bookmarks'}
                   className={cn(
                     'h-12 w-12 rounded-full border-gray-200 transition-all',
                     isBookmarked ? 'border-amber-200 bg-amber-50' : 'hover:bg-gray-50',
@@ -250,6 +272,8 @@ export function ProductDetailHero({
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Share product"
+                  title="Share product"
                   className="h-12 w-12 rounded-full border-gray-200 opacity-40"
                   disabled
                 >

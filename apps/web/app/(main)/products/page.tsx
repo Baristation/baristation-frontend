@@ -39,8 +39,11 @@ function ProductsPageContent() {
     queryFn: async () => {
       const req = mapFiltersToApiRequest(filters, searchQuery, currentPage);
       const result = await searchProductsAction(req);
-      if (!result.success || !result.data) {
-        throw new Error('Failed to fetch products');
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch products');
+      }
+      if (!result.data) {
+        throw new Error('No data received from server');
       }
       return result.data;
     },

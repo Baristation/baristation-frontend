@@ -63,6 +63,11 @@ export interface ProductSearchItem {
   process: string;
   productImage: ProductImageDTO | null;
   flavorNotes: FlavorNoteDTO;
+  roasting?: number;
+  body?: number;
+  acidity?: number;
+  sweetness?: number;
+  balance?: number;
 }
 
 export interface PageInfo {
@@ -91,12 +96,19 @@ export interface ProductSearchResponse {
 export interface ProductSearchRequest {
   keyword?: string;
   flavorCategory?: string;
+  flavorCategories?: string[];
   minAcidity?: number;
   maxAcidity?: number;
   minSweetness?: number;
   maxSweetness?: number;
   minBitterness?: number;
   maxBitterness?: number;
+  minBody?: number;
+  maxBody?: number;
+  minBalance?: number;
+  maxBalance?: number;
+  minRoasting?: number;
+  maxRoasting?: number;
   body?: number;
   roastingType?: string;
   sortBy?: string;
@@ -105,18 +117,12 @@ export interface ProductSearchRequest {
   sort?: string;
 }
 
-export const FLAVOR_CATEGORY_MAP: Record<string, string> = {
-  캐러멜: 'BROWN_SUGAR',
-  와인: 'WINE',
-  초콜릿: 'CHOCOLATY',
-  과일: 'FRUITY',
-  허브: 'HERBAL',
-  맥아: 'MALTY',
-  견과: 'NUTTY',
-  꽃: 'FLORAL',
-  스모키: 'SMOKY',
-};
+// FLAVOR_CATEGORY_MAP removed as it was unused and replaced by FLAVOR_DEFINITIONS.
 
+/**
+ * API 검색 결과를 UI용 ProductInfo 형식으로 변환합니다.
+ * 백엔드에서 평점 데이터(roasting, body 등)를 제공하지 않을 경우 null/undefined가 될 수 있습니다.
+ */
 export function mapSearchItemToProductInfo(item: ProductSearchItem): ProductInfo {
   // 상품 이미지가 없을 경우 향미 이미지를 보여주도록 설정
   const imageUrl =
@@ -130,11 +136,11 @@ export function mapSearchItemToProductInfo(item: ProductSearchItem): ProductInfo
     origin: item.origin,
     primaryFlavor: (item.flavorNotes?.nameKo as FlavorType) || '캐러멜',
     flavorImageUrl: imageUrl,
-    roasting: 3,
-    body: 3,
-    balance: 3,
-    sweetness: 3,
-    acidity: 3,
+    roasting: (item.roasting as RoastingType) ?? 3,
+    body: (item.body as BodyType) ?? 3,
+    balance: item.balance ?? 3,
+    sweetness: item.sweetness ?? 3,
+    acidity: item.acidity ?? 3,
     link: `/products/${item.productId}`,
   };
 }
@@ -286,9 +292,6 @@ export function encodeFiltersToParams(
   return params;
 }
 
-/**
- * 클라이언트의 필터 상태를 백엔드 API 요청 파라미터로 변환합니다.
- */
 export function mapFiltersToApiRequest(
   filters: ProductFilterState,
   searchQuery: string,
@@ -302,7 +305,9 @@ export function mapFiltersToApiRequest(
   }
 
   if (filters.flavors.length > 0) {
-    // API 명세에 따라 적절히 매핑 필요 (현재는 첫 번째 항목만 전달하는 예시)
+    // 다중 선택 지원을 위해 배열 전체 전달 (API 사양에 맞춰 선택적 처리 필요)
+    req.flavorCategories = filters.flavors;
+    // 하위 호환성을 위해 첫 번째 항목도 유지
     req.flavorCategory = filters.flavors[0];
   }
 
@@ -316,8 +321,19 @@ export function mapFiltersToApiRequest(
     req.maxSweetness = filters.flavor.sweetness[1];
   }
 
-  if (filters.body[0] === filters.body[1]) {
-    req.body = filters.body[0];
+  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5) {
+    req.minBalance = filters.flavor.balance[0];
+    req.maxBalance = filters.flavor.balance[1];
+  }
+
+  if (filters.body[0] !== 1 || filters.body[1] !== 5) {
+    req.minBody = filters.body[0];
+    req.maxBody = filters.body[1];
+  }
+
+  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5) {
+    req.minRoasting = filters.roasting[0];
+    req.maxRoasting = filters.roasting[1];
   }
 
   return req;
