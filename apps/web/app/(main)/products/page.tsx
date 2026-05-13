@@ -1,49 +1,72 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
 
-import BeanCardList from '@/components/beans/BeanCardList';
-import BeanFilterDrawer from '@/components/beans/BeanFilterDrawer';
-import BeanFilterPanel from '@/components/beans/BeanFilterPanel';
+import { searchProductsAction } from '@/actions/products.action';
 import PageContainer from '@/components/layout/PageContainer';
+import ProductCardList from '@/components/products/ProductCardList';
+import ProductFilterDrawer from '@/components/products/ProductFilterDrawer';
+import ProductFilterPanel from '@/components/products/ProductFilterPanel';
 import {
-  applyBeanFilters,
   DEFAULT_FILTERS,
-  type BeanFilterState,
-  mockBeansData,
+  type ProductFilterState,
   decodeParamsToFilters,
   encodeFiltersToParams,
-} from '@/lib/api/beans';
+  mapSearchItemToProductInfo,
+  mapFiltersToApiRequest,
+} from '@/lib/api/products';
 
-function BeansPageContent() {
+function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // URL 파라미터를 기반으로 필터 및 검색어 상태 도출 (Single Source of Truth)
+  // URL 파라미터를 기반으로 필터, 검색어, 페이지 상태 도출 (Single Source of Truth)
   const { filters, searchQuery } = useMemo(
     () => decodeParamsToFilters(searchParams),
     [searchParams],
   );
+  const currentPage = Number(searchParams.get('page')) || 0;
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const filteredBeans = useMemo(
-    () => applyBeanFilters(mockBeansData, filters, searchQuery),
-    [filters, searchQuery],
-  );
+  // React Query를 사용한 데이터 페칭
+  const { data: searchResult, isLoading } = useQuery({
+    queryKey: ['products', filters, searchQuery, currentPage],
+    queryFn: async () => {
+      const req = mapFiltersToApiRequest(filters, searchQuery, currentPage);
+      const result = await searchProductsAction(req);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch products');
+      }
+      if (!result.data) {
+        throw new Error('No data received from server');
+      }
+      return result.data;
+    },
+  });
+
+  const products = useMemo(() => {
+    if (!searchResult?.content) return [];
+    return searchResult.content.map(mapSearchItemToProductInfo);
+  }, [searchResult]);
 
   /** URL 쿼리 스트링 업데이트 공통 함수 */
   const updateUrl = (
-    newFilters: BeanFilterState,
+    newFilters: ProductFilterState,
     newSearch: string,
+    newPage: number = 0,
     options: { replace?: boolean } = { replace: false },
   ) => {
     const params = encodeFiltersToParams(newFilters, newSearch);
+    if (newPage > 0) {
+      params.set('page', newPage.toString());
+    }
     const queryString = params.toString();
-    const url = `/beans${queryString ? '?' + queryString : ''}`;
+    const url = `/products${queryString ? '?' + queryString : ''}`;
 
     if (options.replace) {
       router.replace(url, { scroll: false });
@@ -52,16 +75,22 @@ function BeansPageContent() {
     }
   };
 
-  const handleFilterChange = (newFilters: BeanFilterState) => {
-    updateUrl(newFilters, searchQuery, { replace: true });
+  const handleFilterChange = (newFilters: ProductFilterState) => {
+    updateUrl(newFilters, searchQuery, 0, { replace: true });
   };
 
   const handleSearchChange = (newSearch: string) => {
-    updateUrl(filters, newSearch, { replace: true });
+    updateUrl(filters, newSearch, 0, { replace: true });
   };
 
   const handleReset = () => {
-    updateUrl(DEFAULT_FILTERS, '', { replace: false });
+    updateUrl(DEFAULT_FILTERS, '', 0, { replace: false });
+  };
+
+  const handlePageChange = (page: number) => {
+    updateUrl(filters, searchQuery, page, { replace: false });
+    // 스크롤 맨 위로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -70,7 +99,7 @@ function BeansPageContent() {
       <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
         <div className="flex w-full items-start gap-8">
           {/* 좌측 필터 패널 (Desktop/Tablet) */}
-          <BeanFilterPanel
+          <ProductFilterPanel
             filters={filters}
             onChange={handleFilterChange}
             onReset={handleReset}
@@ -91,7 +120,7 @@ function BeansPageContent() {
                   Baristation
                 </Link>
                 <div className="font-outfit shrink-0 text-xs text-gray-400">
-                  {filteredBeans.length}개의 원두
+                  {searchResult?.totalElements || 0}개의 상품
                 </div>
               </div>
 
@@ -105,13 +134,29 @@ function BeansPageContent() {
               </button>
             </div>
 
-            <BeanCardList beans={filteredBeans} isLoading={false} />
+            <ProductCardList
+              products={products}
+              isLoading={isLoading}
+              pageInfo={
+                searchResult
+                  ? {
+                      currentPage: searchResult.currentPage,
+                      size: searchResult.size,
+                      totalElements: searchResult.totalElements,
+                      totalPages: searchResult.totalPages,
+                      hasNext: searchResult.hasNext,
+                      hasPrevious: searchResult.hasPrevious,
+                    }
+                  : undefined
+              }
+              onPageChange={handlePageChange}
+            />
           </div>
         </div>
       </div>
 
       {/* 모바일 필터 Drawer */}
-      <BeanFilterDrawer
+      <ProductFilterDrawer
         isOpen={isDrawerOpen}
         filters={filters}
         onChange={handleFilterChange}
@@ -124,10 +169,10 @@ function BeansPageContent() {
   );
 }
 
-export default function BeansPage() {
+export default function ProductsPage() {
   return (
     <Suspense>
-      <BeansPageContent />
+      <ProductsPageContent />
     </Suspense>
   );
 }

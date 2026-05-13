@@ -1,8 +1,8 @@
-# 원두 정보 페이지 명세서 (Beans Page) - Baristation
+# 원두 정보 페이지 명세서 (Products Page) - Baristation
 
 ## 1. 페이지 개요
 
-Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다. 사용자가 커피 프로파일(향, 맛, 바디, 로스팅) 기준으로 원두를 필터링하고 원하는 원두를 탐색할 수 있도록 지원합니다.
+Baristation 서비스의 원두 정보 탐색(Product Discovery) 페이지입니다. 사용자가 커피 프로파일(향, 맛, 바디, 로스팅) 기준으로 원두를 필터링하고 원하는 원두를 탐색할 수 있도록 지원합니다.
 
 ---
 
@@ -12,21 +12,21 @@ Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다
 
 **페이지 무드: "Sensory Catalogue"** — 마치 고급 커피 카탈로그를 넘기듯, 여백과 이미지 중심의 구성으로 각 원두의 개성이 직접 말을 걸도록 합니다.
 
-### 아로마별 배경 색상 토큰 (AromaColor Palette)
+### 아로마별 배경 색상 토큰 (FlavorColor Palette)
 
-아로마 요소에서 색상을 추출하여 BeanCard 배경에 적용합니다.
+아로마 요소에서 색상을 추출하여 ProductCard 배경에 적용합니다.
 
 | 아로마 | 대표 식재료     | 배경 색상 (HEX) | Tailwind 커스텀 클래스 |
 | ------ | --------------- | --------------- | ---------------------- |
-| 캐러멜 | 캐러멜 설탕     | `#F2D49B`       | `bg-aroma-caramel`     |
-| 와인   | 레드 베리       | `#E8C5C0`       | `bg-aroma-wine`        |
-| 초콜릿 | 다크 초콜릿     | `#C9A882`       | `bg-aroma-chocolate`   |
-| 과일   | 시트러스/복숭아 | `#FDDCB5`       | `bg-aroma-fruit`       |
-| 허브   | 민트/허브 잎    | `#C9E4CA`       | `bg-aroma-herb`        |
-| 맥아   | 보리/곡물       | `#E8D9B5`       | `bg-aroma-malt`        |
-| 견과   | 아몬드/헤이즐넛 | `#E0CAAA`       | `bg-aroma-nutty`       |
-| 꽃     | 자스민/장미     | `#F5D5D5`       | `bg-aroma-floral`      |
-| 스모크 | 훈연 우드       | `#D0CEC8`       | `bg-aroma-smoky`       |
+| 과일   | 시트러스/복숭아 | `#FDDCB5`       | `bg-flavor-fruit`      |
+| 초콜릿 | 다크 초콜릿     | `#C9A882`       | `bg-flavor-chocolate`  |
+| 꽃     | 자스민/장미     | `#F5D5D5`       | `bg-flavor-floral`     |
+| 견과   | 아몬드/헤이즐넛 | `#E0CAAA`       | `bg-flavor-nutty`      |
+| 캐러멜 | 캐러멜 설탕     | `#F2D49B`       | `bg-flavor-caramel`    |
+| 스모크 | 훈연 우드       | `#D0CEC8`       | `bg-flavor-smoky`      |
+| 와인   | 레드 베리       | `#E8C5C0`       | `bg-flavor-wine`       |
+| 허브   | 민트/허브 잎    | `#C9E4CA`       | `bg-flavor-herb`       |
+| 맥아   | 보리/곡물       | `#E8D9B5`       | `bg-flavor-malt`       |
 
 ---
 
@@ -39,9 +39,9 @@ Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다
 │─────────────────────────────────────────│
 │  ┌──────────┐  ┌───────────────────────┐│
 │  │ Filter   │  │  [ 필터 정보/요약 ]   ││  ← 그리드 상단
-│  │ Panel    │  │  BeanCardList         ││  ← 본문 영역
+│  │ Panel    │  │  ProductCardList         ││  ← 본문 영역
 │  │ ├─[검색] │  │  (원두 카드 그리드)    ││
-│  │ ├─Aroma  │  │                       ││
+│  │ ├─Flavor  │  │                       ││
 │  │ └─Flavor │  └───────────────────────┘│
 │  └──────────┘                           │
 └─────────────────────────────────────────┘
@@ -51,14 +51,14 @@ Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다
 │  GlobalNav           │
 │──────────────────────│
 │  [결과 수] [필터 버튼]│  ← 그리드 상단
-│  BeanCardList        │  ← 기본 뷰
+│  ProductCardList        │  ← 기본 뷰
 │  (원두 카드 그리드)   │
 └──────────────────────┘
        ↕ (필터 버튼 클릭 시 Drawer 오버레이)
 ┌──────────────────────┐
-│  [BeanFilterDrawer]  │  ← 하단에서 상단으로 슬라이드
+│  [ProductFilterDrawer]  │  ← 하단에서 상단으로 슬라이드
 │  ├─[ 검색 ]          │  ← 드로어 내부 상단
-│  ├─Aroma             │
+│  ├─Flavor             │
 │  └─Flavor            │
 └──────────────────────┘
 ```
@@ -69,13 +69,13 @@ Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다
 
 ---
 
-### BeanSearchBar
+### ProductSearchBar
 
 #### 1. Overview (맥락)
 
 - **목적**: 원두 이름 또는 키워드로 원두 목록을 실시간 필터링하는 검색 입력 컴포넌트
-- **위치**: `apps/web/components/beans/BeanSearchBar.tsx`
-- **부모 컴포넌트**: `BeanFilterPanel`, `BeanFilterDrawer`
+- **위치**: `apps/web/components/products/ProductSearchBar.tsx`
+- **부모 컴포넌트**: `ProductFilterPanel`, `ProductFilterDrawer`
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
@@ -87,7 +87,7 @@ Baristation 서비스의 원두 정보 탐색(Bean Discovery) 페이지입니다
 **Props**:
 
 ```ts
-interface BeanSearchBarProps {
+interface ProductSearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string; // 기본값: "검색어를 입력하세요"
@@ -130,13 +130,13 @@ interface BeanSearchBarProps {
 
 ---
 
-### BeanFilterPanel
+### ProductFilterPanel
 
 #### 1. Overview (맥락)
 
 - **목적**: 데스크톱/태블릿에서 좌측 사이드바로 항상 노출되는 커피 프로파일 필터 패널
-- **위치**: `apps/web/components/beans/BeanFilterPanel.tsx`
-- **부모 컴포넌트**: `beans/page.tsx`
+- **위치**: `apps/web/components/products/ProductFilterPanel.tsx`
+- **부모 컴포넌트**: `products/page.tsx`
 - **노출 조건**: 뷰포트 너비 ≥ 768px
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
@@ -149,30 +149,39 @@ interface BeanSearchBarProps {
 **Props**:
 
 ```ts
-interface BeanFilterState {
-  aromas: AromaType[]; // 선택된 아로마 (다중 선택)
+interface ProductFilterState {
+  flavors: FlavorType[]; // 선택된 아로마 (다중 선택)
   flavor: {
-    balance: number; // 밸런스 1~5 (0 = 미선택)
-    sweetness: number; // 단맛 1~5 (0 = 미선택)
-    acidity: number; // 산미 1~5 (0 = 미선택)
+    balance: [number, number]; // 밸런스 범위 [min, max] (1~5)
+    sweetness: [number, number]; // 단맛 범위 [min, max] (1~5)
+    acidity: [number, number]; // 산미 범위 [min, max] (1~5)
   };
-  body: 0 | 1 | 2 | 3 | 4 | 5; // 바디감 0 = 미선택, 1~5
-  roasting: 0 | 1 | 2 | 3 | 4 | 5; // 로스팅 0 = 미선택, 1~5
+  body: [number, number]; // 바디감 범위 [min, max] (1~5)
+  roasting: [number, number]; // 로스팅 범위 [min, max] (1~5)
 }
 
-type AromaType = '캐러멜' | '와인' | '초콜릿' | '과일' | '허브' | '맥아' | '견과' | '꽃' | '스모크';
+type FlavorType =
+  | '캐러멜'
+  | '와인'
+  | '초콜릿'
+  | '과일'
+  | '허브'
+  | '맥아'
+  | '견과'
+  | '꽃'
+  | '스모크';
 type RoastingType = 1 | 2 | 3 | 4 | 5;
 
-interface BeanFilterPanelProps {
-  filters: BeanFilterState;
-  onChange: (filters: BeanFilterState) => void;
+interface ProductFilterPanelProps {
+  filters: ProductFilterState;
+  onChange: (filters: ProductFilterState) => void;
   onReset: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
 }
 ```
 
-**State**: `localFilters: BeanFilterState` (미요청 필터 상태 보유)
+**State**: `localFilters: ProductFilterState` (미요청 필터 상태 보유)
 
 **Events / Callbacks**:
 
@@ -188,29 +197,28 @@ interface BeanFilterPanelProps {
 
 #### 5. Functional Requirements (단계별 요구사항)
 
-1. **Search** 구역: 패널 최상단에 `BeanSearchBar`를 포함하여 이름/원산지 검색 연동
-2. **Aroma (향)** 섹션: 9개 아로마 타입을 Chip 형태로 나열, 다중 선택 가능
-3. **Flavor (맛)** 섹션: **산미·단맛·밸런스**를 각 연속된 N등분 막대 형태(Rating Bar) 1~5단계로 표시
-4. **Body (바디감)** 섹션: 1(매우 가벼움) ~ 5(매우 묵직함) Rating Bar 5단계로 확장 표시
-5. **Roasting** 섹션: 1(Light) ~ 5(Dark) Rating Bar 5단계로 확장 표시 (단계: Light, Light Medium, Medium, Medium Dark, Dark)
-6. 모든 필터링 조작은 즉시 반영되지 않고 `localFilters` 상태만 갱신한다
-7. 하단에 스티키(Sticky)하게 자리잡은 "적용하기" 버튼을 클릭할 때 `onChange(localFilters)`를 호출하여 상위 컨텍스트에 반영한다
-8. 하나 이상의 필터가 선택되면 상단에 "초기화" 버튼이 노출된다
-9. 초기화 버튼 클릭 시 `onReset()`을 호출하여 모든 필터를 해제한다
+1. **Search** 구역: 패널 최상단에 `ProductSearchBar`를 포함하여 이름/원산지 검색 연동
+2. **Flavor (향)** 섹션: 17개 아로마 카테고리를 Chip 형태로 나열, 다중 선택 가능
+3. **맛 및 프로파일** 섹션: **산미·단맛·밸런스·바디감·로스팅**을 `RangeSlider`를 이용해 범위(Range) 필터링 가능하게 구현
+4. **RangeSlider UI**: 슬라이더 핸들을 조절하여 최소/최대값을 설정하며, 핸들 상단에 현재 값을 나타내는 `Tooltip`을 노출한다
+5. 모든 필터링 조작은 즉시 반영되지 않고 `localFilters` 상태만 갱신한다
+6. 하단에 스티키(Sticky)하게 자리잡은 "적용하기" 버튼을 클릭할 때 `onChange(localFilters)`를 호출하여 상위 컨텍스트에 반영한다
+7. 하나 이상의 필터가 기본값([1, 5])을 벗어나면 상단에 "초기화" 버튼이 노출된다
+8. 초기화 버튼 클릭 시 `onReset()`을 호출하여 모든 필터를 해제한다
 
 #### 6. Design Spec (디자인 명세)
 
 - **Layout**: `w-[240px] shrink-0`, 수직 스크롤 가능, 섹션 간 `pb-6 border-b border-gray-100`
-- **Aroma Chip**: `rounded-full px-3 py-1 text-xs`, 선택 시 `bg-amber-500 text-white font-semibold shadow-sm`, 미선택 시 `bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300`
+- **Flavor Chip**: `rounded-full px-3 py-1 text-xs`, 선택 시 `bg-amber-500 text-white font-semibold shadow-sm`, 미선택 시 `bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300`
 - **Rating Bar**: 마디별 테두리 적용(`border border-gray-200/50`), 값이 높을수록 진한 색상(`amber-200`~`amber-600`), 미선택 마디는 `bg-gray-50`
-- **Roasting Chip**: Aroma Chip과 동일 스타일
+- **Roasting Chip**: Flavor Chip과 동일 스타일
 - **Typography**: 섹션 타이틀 `Outfit SemiBold text-xs uppercase tracking-widest text-gray-500`, 바디감 수치 텍스트는 타이틀과 동일 선상 우측 배치
 - **Apply Button**: 패널 최하단에 스티키(`sticky bottom-0`)하게 배치되며 `w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white` 속성 적용
 - **Animation** (`framer-motion`): Chip 선택 시 `scale: 0.95 → 1.0` 0.1s 튕김 효과
 
 #### 7. Definition of Done (검증 기준)
 
-- [ ] (기능) Aroma Chip 다중 선택 및 해제가 정상 동작한다
+- [ ] (기능) Flavor Chip 다중 선택 및 해제가 정상 동작한다
 - [ ] (기능) Flavor Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
 - [ ] (기능) Body Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
 - [ ] (기능) Roasting Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
@@ -221,29 +229,29 @@ interface BeanFilterPanelProps {
 
 ---
 
-### BeanFilterDrawer
+### ProductFilterDrawer
 
 #### 1. Overview (맥락)
 
 - **목적**: 모바일 화면에서 필터 버튼 클릭 시 화면 하단에서 상단으로 슬라이드되어 올라오는 Drawer 형태의 필터 패널
-- **위치**: `apps/web/components/beans/BeanFilterDrawer.tsx`
-- **부모 컴포넌트**: `beans/page.tsx`
+- **위치**: `apps/web/components/products/ProductFilterDrawer.tsx`
+- **부모 컴포넌트**: `products/page.tsx`
 - **노출 조건**: 뷰포트 너비 < 768px, 필터 버튼 클릭 시
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
 - **주요 도구**: `framer-motion`, Tailwind CSS v4
-- **기타 제약**: 하단 "취소하기" 버튼, Drawer 외부 영역 클릭(Backdrop) 또는 아래로 드래그하여 닫힘, 컨텐츠는 `BeanFilterPanel`과 동일한 필터 UI 공유
+- **기타 제약**: 하단 "취소하기" 버튼, Drawer 외부 영역 클릭(Backdrop) 또는 아래로 드래그하여 닫힘, 컨텐츠는 `ProductFilterPanel`과 동일한 필터 UI 공유
 
 #### 3. Data Interface (I/O)
 
 **Props**:
 
 ```ts
-interface BeanFilterDrawerProps {
+interface ProductFilterDrawerProps {
   isOpen: boolean;
-  filters: BeanFilterState; // BeanFilterPanel과 동일 타입
-  onChange: (filters: BeanFilterState) => void;
+  filters: ProductFilterState; // ProductFilterPanel과 동일 타입
+  onChange: (filters: ProductFilterState) => void;
   onReset: () => void;
   onClose: () => void;
   searchQuery: string;
@@ -251,7 +259,7 @@ interface BeanFilterDrawerProps {
 }
 ```
 
-**State**: `localFilters: BeanFilterState` (적용 전 임시 상태 보유)
+**State**: `localFilters: ProductFilterState` (적용 전 임시 상태 보유)
 
 **Events / Callbacks**:
 
@@ -267,7 +275,7 @@ interface BeanFilterDrawerProps {
 #### 5. Functional Requirements (단계별 요구사항)
 
 1. `isOpen: true` 시 Backdrop(`bg-black/40`)이 화면 전체를 덮으며 Drawer가 아래에서 올라온다
-2. Drawer 내부는 `BeanFilterPanel`과 동일하게 `BeanSearchBar` 및 전체 필터 항목을 포함한다
+2. Drawer 내부는 `ProductFilterPanel`과 동일하게 `ProductSearchBar` 및 전체 필터 항목을 포함한다
 3. 아래로 드래그하거나 "취소하기" 버튼을 클릭하여 Drawer를 닫는다
 4. Backdrop 클릭 시 `onClose()`를 호출한다
 5. 모든 필터링 조작은 `localFilters` 상태만 갱신하며, 하단 스티키 "적용하기" 버튼 클릭 시 `onChange(localFilters)` 호출 후 Drawer가 닫힌다.
@@ -299,13 +307,13 @@ interface BeanFilterDrawerProps {
 
 ---
 
-### BeanCardList
+### ProductCardList
 
 #### 1. Overview (맥락)
 
 - **목적**: 필터·검색 결과에 맞는 원두 카드 목록을 반응형 그리드로 렌더링하는 컨테이너 컴포넌트
-- **위치**: `apps/web/components/beans/BeanCardList.tsx`
-- **부모 컴포넌트**: `beans/page.tsx`
+- **위치**: `apps/web/components/products/ProductCardList.tsx`
+- **부모 컴포넌트**: `products/page.tsx`
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
@@ -317,19 +325,19 @@ interface BeanFilterDrawerProps {
 **Props**:
 
 ```ts
-interface BeanInfo {
+interface ProductInfo {
   id: number; // 데이터베이스 식별자 (라우팅에 직접 사용하지 않음)
   name: string; // 원두 이름 (예: "Colombia Aristides Guarnizo")
   origin: string; // 원산지 (예: "HUILA, COLOMBIA")
-  primaryAroma: AromaType; // 대표 아로마 (배경 색상 결정에 사용)
-  aromaImageUrl: string; // 대표 아로마 식재료 이미지 URL
+  primaryFlavor: FlavorType; // 대표 아로마 (배경 색상 결정에 사용)
+  flavorImageUrl: string; // 대표 아로마 식재료 이미지 URL
   roasting: RoastingType; // 1~5
   body: 1 | 2 | 3 | 4 | 5;
   link: string; // 캐노니컬 상세 페이지 경로 (라우팅의 기준)
 }
 
-interface BeanCardListProps {
-  beans: BeanInfo[];
+interface ProductCardListProps {
+  products: ProductInfo[];
   isLoading: boolean;
 }
 ```
@@ -340,17 +348,17 @@ interface BeanCardListProps {
 
 #### 4. UI States (상태 명세)
 
-| 상태        | 트리거 조건             | UI 표현                                        |
-| ----------- | ----------------------- | ---------------------------------------------- |
-| **Default** | 데이터 정상 로드        | 원두 카드 반응형 그리드                        |
-| **Loading** | `isLoading: true`       | Skeleton 카드 그리드                           |
-| **Empty**   | `beans` 배열이 비어있음 | 빈 상태 안내 (`w-full` 유지하여 레이아웃 고정) |
+| 상태        | 트리거 조건                | UI 표현                                        |
+| ----------- | -------------------------- | ---------------------------------------------- |
+| **Default** | 데이터 정상 로드           | 원두 카드 반응형 그리드                        |
+| **Loading** | `isLoading: true`          | Skeleton 카드 그리드                           |
+| **Empty**   | `products` 배열이 비어있음 | 빈 상태 안내 (`w-full` 유지하여 레이아웃 고정) |
 
 #### 5. Functional Requirements (단계별 요구사항)
 
-1. `beans` 배열을 순서대로 `BeanCard`로 렌더링한다
+1. `products` 배열을 순서대로 `ProductCard`로 렌더링한다
 2. `isLoading: true` 시 Skeleton 카드를 그리드 형태로 표시한다
-3. `beans` 배열이 비어있을 때 빈 상태 안내 문구를 중앙에 표시한다
+3. `products` 배열이 비어있을 때 빈 상태 안내 문구를 중앙에 표시한다
 4. 스크롤 진입 시 카드가 순차적으로 페이드인된다
 
 #### 6. Design Spec (디자인 명세)
@@ -375,13 +383,13 @@ interface BeanCardListProps {
 
 ---
 
-### BeanCard
+### ProductCard
 
 #### 1. Overview (맥락)
 
 - **목적**: 단일 원두를 아로마 대표 식재료 풀-사이즈 사진과 텍스트 오버레이로 표현하는 프리미엄 카드 컴포넌트. 정보 탐색적 성격보다 시각적 감성(Look & Feel)을 극대화합니다.
-- **위치**: `apps/web/components/common/cards/BeanCard.tsx`
-- **부모 컴포넌트**: `BeanCardList`, `RecommendedBeans`
+- **위치**: `apps/web/components/common/cards/ProductCard.tsx`
+- **부모 컴포넌트**: `ProductCardList`, `RecommendedProducts`
 - **레퍼런스 디자인**: 제공된 "Sunrise Vegan Bowl" 예시와 동일한 이미지 중심 레이아웃
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
@@ -393,12 +401,12 @@ interface BeanCardListProps {
 #### 3. Data Interface (I/O)
 
 ```ts
-interface BeanCardProps {
+interface ProductCardProps {
   id: number; // 식별용
   name: string;
   origin: string;
-  primaryAroma: AromaType;
-  aromaImageUrl: string;
+  primaryFlavor: FlavorType;
+  flavorImageUrl: string;
   link: string; // 상세 페이지로 이동할 캐노니컬 URL
   balance: number; // 1~5
   sweetness: number; // 1~5
@@ -418,13 +426,13 @@ interface BeanCardProps {
 
 #### 5. Functional Requirements (단계별 요구사항)
 
-1. `aromaImageUrl`을 카드 전체 배경으로 사용한다 (`fill`, `object-cover`)
+1. `flavorImageUrl`을 카드 전체 배경으로 사용한다 (`fill`, `object-cover`)
 2. 하단 60% 영역에 선형 그라데이션(`black/90` → `transparent`)을 적용하여 텍스트 가독성을 확보한다
 3. 텍스트는 좌측 하단에 정렬하며, 원산지 → 원두명 순서로 배치한다
 4. 호버 시 카드가 위로 떠오르며 배경 이미지가 확대되는 동시에 **커피 프로필(Acidity, Sweetness, Balance, Body, Roasting) 정보가 60% 투명도의 블랙 오버레이와 Backdrop Blur(`2px`) 효과와 함께 나타난다.**
 5. 오버레이 내부 상단에는 **로스터리 마크(Coffee 아이콘)**가 표시된다.
 
-6. 클릭 시 `link` 프로퍼티의 경로로 라우팅한다. 상세 명세는 [원두 상세 페이지 명세서(bean-detail-page.md)](bean-detail-page.md)를 참조하십시오. (id는 데이터베이스 식별용으로만 관리하며 라우팅은 link를 따름)
+6. 클릭 시 `link` 프로퍼티의 경로로 라우팅한다. 상세 명세는 [원두 상세 페이지 명세서(product-detail-page.md)](product-detail-page.md)를 참조하십시오. (id는 데이터베이스 식별용으로만 관리하며 라우팅은 link를 따름)
 
 #### 6. Design Spec (디자인 명세)
 
@@ -449,24 +457,24 @@ interface BeanCardProps {
 ## 5. 아키텍처 요약
 
 ```text
-beans/page.tsx (메인 엔트리)
-  ├── BeanFilterPanel       ← 필터 사이드바 (Desktop/Tablet)
-  │     └── BeanSearchBar   ← 통합 검색창
-  ├── BeanFilterDrawer      ← 필터 Drawer (Mobile)
-  │     └── BeanSearchBar   ← 통합 검색창
-  └── BeanCardList
-        └── BeanCard × N
+products/page.tsx (메인 엔트리)
+  ├── ProductFilterPanel       ← 필터 사이드바 (Desktop/Tablet)
+  │     └── ProductSearchBar   ← 통합 검색창
+  ├── ProductFilterDrawer      ← 필터 Drawer (Mobile)
+  │     └── ProductSearchBar   ← 통합 검색창
+  └── ProductCardList
+        └── ProductCard × N
 ```
 
-**상태 관리**: `beans/page.tsx`에서 `filterState`와 `searchQuery`를 관리하고 하위 컴포넌트에 Props로 전달합니다.
+**상태 관리**: `products/page.tsx`에서 `filterState`와 `searchQuery`를 관리하고 하위 컴포넌트에 Props로 전달합니다.
 
 ```ts
 // page.tsx 상태 구조
 const [searchQuery, setSearchQuery] = useState('');
-const [filters, setFilters] = useState<BeanFilterState>(defaultFilters);
+const [filters, setFilters] = useState<ProductFilterState>(defaultFilters);
 const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
-// 필터된 원두 목록 = useMemo(() => applyFilters(beans, filters, searchQuery), [...])
+// 필터된 원두 목록 = useMemo(() => applyFilters(products, filters, searchQuery), [...])
 ```
 
 ---
@@ -474,10 +482,10 @@ const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 ## 6. 핵심 동작 요구사항
 
 - **텍스트 최소화**: 카드 내 키워드(원산지, 원두명)만 노출하며 설명 문구 배제
-- **아로마 색상 시스템**: `AromaColor Palette` 토큰으로 카드 배경 색상을 일관성 있게 관리
+- **아로마 색상 시스템**: `FlavorColor Palette` 토큰으로 카드 배경 색상을 일관성 있게 관리
 - **명시적 지연 반영(Deferred)**: 필터 상태는 즉시 반영되지 않고 '적용하기' 버튼에 의해 제출되어야 한다
 - **모바일 Drawer**: 모바일에서 필터가 Drawer로 동작하여 탐색 공간을 최대화
-- **Mock 지원**: 백엔드 없이 `mockBeansData`로 전체 UI 동작 검증 가능
+- **API 연동**: 백엔드의 `/api/products/search` 엔드포인트를 통해 데이터를 페칭하며, 이미지 부재 시 향미 이미지(`flavorImageUrl`)를 우선 노출하는 Fallback 로직 적용
 
 ---
 
@@ -485,33 +493,43 @@ const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
 ### 상황
 
-> 원두 목록 조회 (필터·검색 파라미터 포함)
+> 상품(원두) 목록 조회 (필터·검색 및 페이지네이션 포함)
 
 ### Request
 
 ```http
-GET /api/beans?search={keyword}&aromas={}&balance={1-5}&sweetness={1-5}&acidity={1-5}&body={1-5}&roasting={1-5}
+GET /api/products/search?keyword={keyword}&flavorCategory={category}&minAcidity={1-10}&maxAcidity={1-10}&minSweetness={1-10}&maxSweetness={1-10}&body={1-5}&page={0}&size={12}
 ```
 
-| Query Parameter | Type       | Description        | 필수 |
-| --------------- | ---------- | ------------------ | ---- |
-| `search`        | `string`   | 검색 키워드        | ✗    |
-| `aromas`        | `string[]` | 아로마 필터 (다중) | ✗    |
-| `balance`       | `number`   | 밸런스 1~5         | ✗    |
-| `sweetness`     | `number`   | 단맛 1~5           | ✗    |
-| `acidity`       | `number`   | 산미 1~5           | ✗    |
-| `body`          | `number`   | 바디감 1~5         | ✗    |
-| `roasting`      | `number`   | 로스팅 1~5         | ✗    |
+| Query Parameter  | Type     | Description                            | 필수 |
+| ---------------- | -------- | -------------------------------------- | ---- |
+| `keyword`        | `string` | 원두명 / 생산지 / 로스터명 키워드 검색 | ✗    |
+| `flavorCategory` | `string` | 맛 카테고리 (FRUITY, NUTTY 등 Enum)    | ✗    |
+| `minAcidity`     | `number` | 산미 최소값 (1~10 단위 확장 가능)      | ✗    |
+| `maxAcidity`     | `number` | 산미 최대값 (1~10 단위 확장 가능)      | ✗    |
+| `minSweetness`   | `number` | 단맛 최소값 (1~10 단위 확장 가능)      | ✗    |
+| `maxSweetness`   | `number` | 단맛 최대값 (1~10 단위 확장 가능)      | ✗    |
+| `body`           | `number` | 바디감 1~5                             | ✗    |
+| `roastingType`   | `string` | 로스팅 타입 (LIGHT, MEDIUM 등 Enum)    | ✗    |
+| `page`           | `number` | 페이지 번호 (0부터 시작)               | ✗    |
+| `size`           | `number` | 한 페이지 당 아이템 수 (기본 12)       | ✗    |
+| `sortBy`         | `string` | 정렬 기준 (예: 'id', 'name')           | ✗    |
+| `sort`           | `string` | 정렬 방향 ('asc', 'desc')              | ✗    |
 
 ### Response Body
 
 ```ts
-interface BeansResponse {
+interface ProductSearchResponse {
   statusCode: string;
   message: string;
   data: {
-    beans: BeanInfo[];
-    total: number;
+    content: ProductSearchItem[]; // 향미/이미지 정보 포함 상품 리스트
+    totalPages: number;
+    totalElements: number;
+    currentPage: number;
+    size: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
   };
 }
 ```

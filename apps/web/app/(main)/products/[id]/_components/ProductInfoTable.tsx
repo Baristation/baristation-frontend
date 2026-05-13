@@ -3,33 +3,18 @@
 import { motion } from 'framer-motion';
 
 import SectionContainer from '@/components/layout/SectionContainer';
+import type { BeanSummaryDTO } from '@/lib/api/products';
 
-interface BeanInfoTableProps {
-  origin: string;
-  category?: string;
-  blend?: boolean;
-  processing?: string;
-  variety?: string;
-  altitude?: string;
-  description?: string;
+interface ProductInfoTableProps {
+  beanSummary: BeanSummaryDTO;
+  description: string;
 }
 
-export function BeanInfoTable({
-  origin,
-  category,
-  blend,
-  processing,
-  variety,
-  altitude,
-  description,
-}: BeanInfoTableProps) {
+export function ProductInfoTable({ beanSummary, description }: ProductInfoTableProps) {
   const infoItems = [
-    { label: '원산지', value: origin },
-    { label: '카테고리', value: category },
-    { label: '분류', value: blend === undefined ? undefined : blend ? '블렌드' : '싱글 오리진' },
-    { label: '가공 방식', value: processing },
-    { label: '품종', value: variety },
-    { label: '재배 고도', value: altitude },
+    { label: '국가', value: beanSummary.origin },
+    { label: '지역', value: beanSummary.region },
+    { label: '가공 방식', value: beanSummary.process },
   ].filter((item) => item.value !== undefined && item.value !== null && item.value !== '');
 
   return (
@@ -43,10 +28,10 @@ export function BeanInfoTable({
       >
         <div className="flex flex-col justify-center lg:col-span-8">
           <h2 className="font-playfair mb-6 text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-gray-900">
-            원두 정보
+            Bean Details
           </h2>
           {description ? (
-            <p className="text-[clamp(1rem,2vw,1.125rem)] leading-relaxed text-gray-600">
+            <p className="text-[clamp(1rem,2vw,1.125rem)] leading-relaxed whitespace-pre-wrap text-gray-600">
               {description}
             </p>
           ) : (
@@ -54,7 +39,7 @@ export function BeanInfoTable({
           )}
         </div>
 
-        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-8 lg:col-span-4">
+        <div className="h-fit rounded-2xl border border-gray-100 bg-gray-50 p-8 lg:col-span-4">
           <ul className="space-y-6">
             {infoItems.map((item, i) => (
               <li

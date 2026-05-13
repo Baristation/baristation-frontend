@@ -1,4 +1,4 @@
-# 원두 상세 페이지 명세서 (Bean Detail Page) - Baristation
+# 원두 상세 페이지 명세서 (Product Detail Page) - Baristation
 
 ## 1. 페이지 개요
 
@@ -32,13 +32,13 @@
 │  │                   │ │              │ │
 │  └───────────────────┘ └──────────────┘ │
 │  ┌────────────────────────────────────┐ │
-│  │ [Bean Info Section]                │ │
+│  │ [Product Info Section]                │ │
 │  │ ├─ Description (Full Width)        │ │
 │  │ └─ Info Grid (2x3 Grid on Desktop) │ │
 │  │────────────────────────────────────│ │
 │  │ [Flavor Profile]                   │ │
 │  │────────────────────────────────────│ │
-│  │ [Recommended Beans]                │ │
+│  │ [Recommended Products]                │ │
 │  └────────────────────────────────────┘ │
 └─────────────────────────────────────────┘
 ```
@@ -54,13 +54,13 @@
 
 ## 4. 컴포넌트 명세 (Component Specs)
 
-### BeanDetailHero
+### ProductDetailHero
 
 #### 1. Overview (맥락)
 
 - **목적**: 원두의 첫인상을 결정하는 히어로 영역. 대표 이미지와 핵심 기본 정보, 북마크, 구매처 연결 기능을 제공함.
-- **위치**: `apps/web/app/(main)/beans/[id]/_components/BeanDetailHero.tsx`
-- **부모 컴포넌트**: `BeanDetailPage`
+- **위치**: `apps/web/app/(main)/products/[id]/_components/ProductDetailHero.tsx`
+- **부모 컴포넌트**: `ProductDetailPage`
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
@@ -72,13 +72,13 @@
 **Props**:
 
 ```ts
-interface BeanDetailHeroProps {
-  name: string; // 원두명
-  origin: string; // 원산지
-  roastery?: string; // 로스터리
-  aromaImageUrl: string; // 아로마 이미지 URL
-  primaryAroma: AromaType; // 대표 아로마
-  purchaseUrl?: string; // 구매 외부 링크 (미존재 시에도 버튼은 유지)
+interface ProductDetailHeroProps {
+  beanSummary: BeanSummaryDTO; // 원두 기본 정보 및 메인 이미지
+  roaster: RoasterDTO; // 로스터리 상세 정보
+  agtronMin: number | null; // 아그트론 수치 최소값
+  agtronMax: number | null; // 아그트론 수치 최대값
+  additionalImages: ProductImageDTO[]; // 서브 이미지 리스트
+  flavorNotes: FlavorNoteDTO[]; // 향미 노트 리스트 (아이콘 포함)
 }
 ```
 
@@ -101,12 +101,18 @@ interface BeanDetailHeroProps {
 1. **모바일 전용 헤더 및 액션**:
    - 모바일 해상도에서 "Baristation" 로고를 좌측에, 북마크/공유 버튼을 우측 상단에 배치한다.
    - 상단 버튼은 `bg-white/90` 및 `backdrop-blur`를 적용하여 배경에 상관없이 시인성을 확보한다.
-   - **'구매하기' 버튼은 모바일에서 우측 하단 플로팅 버튼(FAB)** 형태로 제공하여 접근성을 높인다.
-2. 원두의 대표 아로마 이미지를 고해상도(1:1 비율)로 렌더링하며, 모든 해상도에서 수평 중앙 정렬을 유지한다.
-3. 로스터리 명과 원두명을 명확한 위계(`Playfair Display`)로 표시한다.
-4. 데스크톱 기준, 북마크 및 공유 버튼은 우측 정렬하되 '구매하기' 버튼은 해당 영역의 좌측에 배치한다.
-5. 상단에 "Back" 버튼을 두어 브라우저 History 상 이전 라우트로 이동 가능케 하며, 헤더와의 간격을 최소화(`mt-0 md:mt-4`)한다.
-6. 모바일 해상도에서 이미지와 텍스트 오버레이 사이의 간격을 최적화한다.
+2. **이미지 갤러리 및 썸네일**:
+   - 대표 이미지(THUMB)와 추가 이미지(SUB)를 결합하여 이미지 리스트를 구성한다.
+   - 하단에 썸네일 스트립을 제공하여 이미지를 전환할 수 있게 한다. 이미지가 1개인 경우 스트립은 숨긴다.
+3. **향미 노트 시각화**:
+   - `flavorNotes` 배열을 순회하여 각 노트의 아이콘 이미지와 이름을 포함한 칩(Chip) 형태로 렌더링한다.
+   - 칩의 배경은 브랜드 컬러(`bg-orange-100`)를 사용하며 외곽선 없이 깔끔하게 표현한다.
+4. **아그트론(Agtron) 수치 시각화**:
+   - 원두의 볶음 정도를 나타내는 아그트론 수치를 그래디언트 바 위에 인디케이터로 표시한다.
+   - `agtronMin`과 `agtronMax`가 모두 존재하는 경우 범위로 표시하며, 바 위에 두 개의 점을 찍는다.
+5. 로스터리 명 옆에 홈페이지 외부 링크 아이콘(`Globe`)을 배치하여 신뢰도를 높인다.
+6. 상단에 "Back" 버튼을 두어 브라우저 History 상 이전 라우트로 이동 가능케 하며, 헤더와의 간격을 최소화(`mt-0 md:mt-4`)한다.
+7. 모바일 해상도에서 이미지와 텍스트 오버레이 사이의 간격을 최적화한다.
 
 #### 6. Definition of Done (검증 기준)
 
@@ -115,13 +121,13 @@ interface BeanDetailHeroProps {
 
 ---
 
-### BeanInfoTable
+### ProductInfoTable
 
 #### 1. Overview (맥락)
 
 - **목적**: 원두의 기원, 카테고리, 블렌딩 여부, 가공 방식, 재배 높이 및 상세 이야기를 담은 첫 진입 정보 패널.
-- **위치**: `apps/web/app/(main)/beans/[id]/_components/BeanInfoTable.tsx`
-- **부모 컴포넌트**: `BeanDetailPage`
+- **위치**: `apps/web/app/(main)/products/[id]/_components/ProductInfoTable.tsx`
+- **부모 컴포넌트**: `ProductDetailPage`
 
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
@@ -132,14 +138,9 @@ interface BeanDetailHeroProps {
 **Props**:
 
 ```ts
-interface BeanInfoTableProps {
-  origin: string; // 원산지
-  category?: string; // 카테고리 (예: 'Single Origin', 'Decaf')
-  blend?: boolean; // 블렌드여부 (혼합 여부)
-  processing?: string; // 가공방식
-  variety?: string; // 품종
-  altitude?: string; // 재배고도
-  description?: string; // 상세설명
+interface ProductInfoTableProps {
+  beanSummary: BeanSummaryDTO; // 원산지, 지역, 가공 방식 포함
+  description: string; // 상세 설명 (스토리)
 }
 ```
 
@@ -152,10 +153,9 @@ interface BeanInfoTableProps {
 
 #### 5. Functional Requirements (단계별 요구사항)
 
-1. "원두 정보" 섹션 상단에 상세 설명을 배치하여 원두의 스토리를 전달한다. (최대 너비 제한으로 가독성 확보)
-2. 하단에 원산지, 분류, 가공 방식 등의 정보 항목을 **2행 3열 그리드(데스크톱/태블릿 기준)**로 렌더링한다. 모바일에서는 1열로 쌓는다.
-3. `blend`가 true면 '블렌드', false면 '싱글 오리진'을 표시한다.
-4. 내용이 없는 데이터(Undefined, Null)는 테이블 리스트에서 동적으로 제거한다.
+1. "Bean Details" 섹션 상단에 상세 설명을 배치하여 원두의 스토리를 전달한다. (`whitespace-pre-wrap` 적용)
+2. 하단에 **국가(Origin), 지역(Region), 가공 방식(Process)** 항목을 세로 리스트 형태로 렌더링한다. (Desktop 기준 우측 패널)
+3. 내용이 없는 데이터(Undefined, Null, 빈 문자열)는 테이블 리스트에서 동적으로 제거한다.
 
 #### 6. Definition of Done (검증 기준)
 
@@ -169,28 +169,32 @@ interface BeanInfoTableProps {
 #### 1. Overview (맥락)
 
 - **목적**: 원두의 감각적 특성을 정량적 지표로 시각화하여 사용자가 직관적으로 맛의 프로파일을 유추할 수 있도록 함.
-- **위치**: `apps/web/app/(main)/beans/[id]/_components/FlavorProfileSection.tsx`
-- **부모 컴포넌트**: `BeanDetailPage`
+- **위치**: `apps/web/app/(main)/products/[id]/_components/FlavorProfileSection.tsx`
+- **부모 컴포넌트**: `ProductDetailPage`
 
 #### 2. Data Interface (I/O)
 
 **Props**:
 
+````ts
+**Props**:
+
 ```ts
 interface FlavorProfileProps {
-  acidity: number; // 산미 (1~5)
-  sweetness: number; // 감미 (1~5)
-  balance: number; // 밸런스 (1~5)
-  body: number; // 바디감 (1~5)
-  roasting: number; // 로스팅 (1~5)
+  acidity: number | null; // 산미 (1~5)
+  sweetness: number | null; // 감미 (1~5)
+  balance: number | null; // 밸런스 (1~5)
+  body: number | null; // 바디감 (1~5)
+  roastingType: string; // 로스팅 타입 (예: 'MEDIUMDARK')
 }
-```
+````
 
 #### 3. Functional Requirements (단계별 요구사항)
 
 1. 모든 지표는 `RatingScale` 컴포넌트를 사용하여 **5단계 표준 척도**로 표시한다.
-2. 지표 배치 순서는 **산미(Acidity) -> 감미(Sweetness) -> 바디감(Body)** (상단 그리드), **밸런스(Balance) -> 로스팅(Roast)** (하단 그리드) 순으로 정렬한다.
-3. 로스팅 단계는 5단계를 지원하며, 툴팁이나 가이드 상에서 **Light, Light Medium, Medium, Medium Dark, Dark**로 구분한다.
+2. 데이터가 `null`인 경우 "N/A" 문구를 표시하고, `RatingScale`은 투명도를 낮추어 비활성 상태임을 알린다.
+3. 로스팅 단계는 텍스트(예: Roast: Medium-Dark)로 우측 상단 뱃지에 표시한다.
+4. 컬러 팔레트: 산미(`teal`), 감미(`amber`), 바디감(`espresso`), 밸런스(`amber/teal`), 미지정(`stone`).
 
 ---
 
@@ -199,11 +203,11 @@ interface FlavorProfileProps {
 ## 5. 아키텍처 요약
 
 ```text
-beans/[id]/page.tsx (Detail Entry)  [ 래퍼 : <PageContainer> ]
-  ├── BeanDetailHero        ← 상단 비주얼, 북마크, 구매 연결(ExternalLink)
-  ├── BeanInfoTable         ← 설명 서술 및 기본 정보 제공(카테고리 등)
+products/[id]/page.tsx (Detail Entry)  [ 래퍼 : <PageContainer> ]
+  ├── ProductDetailHero        ← 상단 비주얼, 북마크, 구매 연결(ExternalLink)
+  ├── ProductInfoTable         ← 설명 서술 및 기본 정보 제공(카테고리 등)
   ├── FlavorProfileSection  ← 맛 정보 분석 지표(차트화)
-  └── RecommendedBeans      ← 페이지 하단의 "비슷한 맛의 원두 추천" 영역
+  └── RecommendedProducts      ← 페이지 하단의 "비슷한 맛의 원두 추천" 영역
 ```
 
 ---

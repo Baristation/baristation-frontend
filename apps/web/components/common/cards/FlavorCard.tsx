@@ -7,7 +7,7 @@ import React from 'react';
 
 import { cn } from '@/lib/utils';
 
-interface AromaCardProps {
+interface FlavorCardProps {
   name: string;
   imageUrl: string;
   link: string;
@@ -16,15 +16,15 @@ interface AromaCardProps {
 }
 
 /**
- * AromaCard - 단일 향미 카테고리 이미지 카드 (VisualCard Compound Pattern 적용)
+ * FlavorCard - 단일 향미 카테고리 이미지 카드 (VisualCard Compound Pattern 적용)
  */
-export default function AromaCard({
+export default function FlavorCard({
   name,
   imageUrl,
   link,
   index = 0,
   className = '',
-}: AromaCardProps) {
+}: FlavorCardProps) {
   return (
     <VisualCard.Root
       asChild

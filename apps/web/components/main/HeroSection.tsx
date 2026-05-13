@@ -39,7 +39,7 @@ const DEFAULT_SLIDES: CarouselSlide[] = [
     id: 3,
     imageUrl:
       'https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=2561&auto=format&fit=crop',
-    alt: 'Coffee beans',
+    alt: 'Coffee products',
   },
 ];
 

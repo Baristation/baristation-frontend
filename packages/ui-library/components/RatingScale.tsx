@@ -50,6 +50,13 @@ const PALETTES = {
     hover: 'hover:bg-green-600',
     border: 'border-green-200/50',
   },
+  stone: {
+    scale: ['#F5F5F4', '#E7E5E4', '#D6D3D1', '#A8A29E', '#78716C'],
+    glow: 'rgba(120, 113, 108, 0.4)',
+    bg: 'bg-stone-500',
+    hover: 'hover:bg-stone-600',
+    border: 'border-stone-200/50',
+  },
 } as const;
 
 export type ColorPalette = keyof typeof PALETTES;
