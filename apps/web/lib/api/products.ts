@@ -134,7 +134,7 @@ export function mapSearchItemToProductInfo(item: ProductSearchItem): ProductInfo
     id: item.productId,
     name: item.beanNameKo,
     origin: item.origin,
-    primaryFlavor: (item.flavorNotes?.nameKo as FlavorType) || '캐러멜',
+    primaryFlavor: FLAVOR_DEFINITIONS.find((f) => f.ko === item.flavorNotes?.nameKo)?.id || 'OTHER',
     flavorImageUrl: imageUrl,
     roasting: (item.roasting as RoastingType) ?? 3,
     body: (item.body as BodyType) ?? 3,
