@@ -100,79 +100,53 @@ export function mapSearchItemToProductInfo(item: ProductSearchItem): ProductInfo
   };
 }
 
+export type FlavorType =
+  | 'FRUITY'
+  | 'FLORAL'
+  | 'SWEET'
+  | 'BROWN_SUGAR'
+  | 'CHOCOLATY'
+  | 'NUTTY'
+  | 'SPICE'
+  | 'ROASTED'
+  | 'FERMENTED'
+  | 'GREEN_VEGETATIVE'
+  | 'EARTHY'
+  | 'WOODY'
+  | 'CHEMICAL'
+  | 'SAVORY'
+  | 'MOUTHFEEL'
+  | 'DEFECT'
+  | 'OTHER';
+
 export interface FlavorDefinition {
-  id: string; // 영문 ID (예: 'caramel')
-  ko: string; // 한국어 명칭 (예: '캐러멜')
-  imageUrl: string; // 기본 이미지 URL
+  id: FlavorType;
+  ko: string;
+  emoji: string;
+  imageUrl?: string;
 }
 
 export const FLAVOR_DEFINITIONS: FlavorDefinition[] = [
-  {
-    id: 'wine',
-    ko: '와인',
-    imageUrl:
-      'https://images.unsplash.com/photo-1474722883778-792e7990302f?q=80&w=691&auto=format&fit=crop',
-  },
-  {
-    id: 'herb',
-    ko: '허브',
-    imageUrl:
-      'https://images.unsplash.com/photo-1471193945509-9ad0617afabf?q=80&w=600&auto=format&fit=crop',
-  },
-  {
-    id: 'floral',
-    ko: '꽃',
-    imageUrl:
-      'https://images.unsplash.com/photo-1612380635121-411eda9ecbb9?q=80&w=687&auto=format&fit=crop',
-  },
-  {
-    id: 'malt',
-    ko: '맥아',
-    imageUrl:
-      'https://images.unsplash.com/photo-1733276478182-4cc629dadd39?q=80&w=1170&auto=format&fit=crop',
-  },
-  {
-    id: 'nutty',
-    ko: '견과',
-    imageUrl:
-      'https://images.unsplash.com/photo-1508779018996-601e37fa274e?q=80&w=687&auto=format&fit=crop',
-  },
-  {
-    id: 'fruit',
-    ko: '과일',
-    imageUrl:
-      'https://images.unsplash.com/photo-1639588473831-dd9d014646ae?q=80&w=600&auto=format&fit=crop',
-  },
-  {
-    id: 'caramel',
-    ko: '캐러멜',
-    imageUrl:
-      'https://plus.unsplash.com/premium_photo-1695865411429-fc175f8d408d?q=80&w=688&auto=format&fit=crop',
-  },
-  {
-    id: 'smoky',
-    ko: '스모키',
-    imageUrl:
-      'https://images.unsplash.com/photo-1621460244277-7038c21f2f32?q=80&w=687&auto=format&fit=crop',
-  },
-  {
-    id: 'chocolate',
-    ko: '초콜릿',
-    imageUrl:
-      'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?q=80&w=600&auto=format&fit=crop',
-  },
+  { id: 'FRUITY', ko: '과일', emoji: '🍋' },
+  { id: 'FLORAL', ko: '꽃', emoji: '🌸' },
+  // { id: 'SWEET', ko: '단맛', emoji: '🍬' },
+  // { id: 'BROWN_SUGAR', ko: '브라운 슈가', emoji: '🟤' },
+  { id: 'CHOCOLATY', ko: '초콜릿', emoji: '🍫' },
+  { id: 'NUTTY', ko: '견과류', emoji: '🥜' },
+  { id: 'SPICE', ko: '스파이스', emoji: '🌶️' },
+  // { id: 'ROASTED', ko: '로스티드', emoji: '☕' },
+  { id: 'FERMENTED', ko: '발효', emoji: '🍷' },
+  { id: 'GREEN_VEGETATIVE', ko: '허브/채소', emoji: '🌿' },
+  { id: 'EARTHY', ko: '흙', emoji: '🌍' },
+  { id: 'WOODY', ko: '나무', emoji: '🪵' },
+  // { id: 'CHEMICAL', ko: '화학적', emoji: '🧪' },
+  { id: 'SAVORY', ko: '감칠맛', emoji: '🧂' },
+  // { id: 'MOUTHFEEL', ko: '바디감', emoji: '🥛' },
+  // { id: 'DEFECT', ko: '결함', emoji: '⚠️' },
+  // { id: 'OTHER', ko: '기타', emoji: '❓' },
 ];
 
-export type FlavorType =
-  | '캐러멜'
-  | '와인'
-  | '초콜릿'
-  | '과일'
-  | '허브'
-  | '맥아'
-  | '견과'
-  | '꽃'
-  | '스모키';
+export const FLAVOR_TYPES: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.id);
 
 export type RoastingType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Dark
 export type BodyType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Heavy
@@ -223,29 +197,23 @@ export interface ProductFilterState {
 
 export const DEFAULT_FILTERS: ProductFilterState = {
   flavors: [],
-  flavor: { balance: [1, 5], sweetness: [1, 10], acidity: [1, 10] },
+  flavor: { balance: [1, 5], sweetness: [1, 5], acidity: [1, 5] },
   body: [1, 5],
   roasting: [1, 5],
 };
 
-/** FlavorType → Tailwind 배경 클래스 매핑 */
-export const FLAVOR_BG_CLASS: Record<FlavorType, string> = {
-  캐러멜: 'bg-flavor-caramel',
-  와인: 'bg-flavor-wine',
-  초콜릿: 'bg-flavor-chocolate',
-  과일: 'bg-flavor-fruit',
-  허브: 'bg-flavor-herb',
-  맥아: 'bg-flavor-malt',
-  견과: 'bg-flavor-nutty',
-  꽃: 'bg-flavor-floral',
-  스모키: 'bg-flavor-smoky',
+/** FlavorType → Tailwind 배경 클래스 매핑 (구 버전 호환성 유지 혹은 제거 가능) */
+export const FLAVOR_BG_CLASS: Record<string, string> = {
+  FRUITY: 'bg-flavor-fruit',
+  CHOCOLATY: 'bg-flavor-chocolate',
+  FLORAL: 'bg-flavor-floral',
+  // ... 필요 시 추가
 };
 
-export const FLAVOR_TYPES: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.ko as FlavorType);
 export const ROASTING_TYPES: RoastingType[] = [1, 2, 3, 4, 5];
 export const BODY_TYPES: BodyType[] = [1, 2, 3, 4, 5];
 
-export function getFlavorById(id: string) {
+export function getFlavorById(id: FlavorType) {
   return FLAVOR_DEFINITIONS.find((def) => def.id === id);
 }
 
@@ -261,18 +229,14 @@ export function encodeFiltersToParams(
   const params = new URLSearchParams();
 
   if (filters.flavors.length > 0) {
-    const flavorCodes = filters.flavors
-      .map((ko) => FLAVOR_DEFINITIONS.find((d) => d.ko === ko)?.id)
-      .filter(Boolean)
-      .join(',');
-    if (flavorCodes) params.set('flavors', flavorCodes);
+    params.set('flavors', filters.flavors.join(','));
   }
 
   if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5)
     params.set('balance', filters.flavor.balance.join('-'));
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 10)
+  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5)
     params.set('sweetness', filters.flavor.sweetness.join('-'));
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 10)
+  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5)
     params.set('acidity', filters.flavor.acidity.join('-'));
   if (filters.body[0] !== 1 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
   if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5)
@@ -299,22 +263,20 @@ export function mapFiltersToApiRequest(
   }
 
   if (filters.flavors.length > 0) {
-    const mappedCategory = FLAVOR_CATEGORY_MAP[filters.flavors[0] as string];
-    if (mappedCategory) req.flavorCategory = mappedCategory;
+    // API 명세에 따라 적절히 매핑 필요 (현재는 첫 번째 항목만 전달하는 예시)
+    req.flavorCategory = filters.flavors[0];
   }
 
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 10) {
+  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5) {
     req.minAcidity = filters.flavor.acidity[0];
     req.maxAcidity = filters.flavor.acidity[1];
   }
 
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 10) {
+  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5) {
     req.minSweetness = filters.flavor.sweetness[0];
     req.maxSweetness = filters.flavor.sweetness[1];
   }
 
-  // 바디감은 현재 단일 값만 API 명세에 명시되어 있으나, 만약 min/max가 생기면 확장이 필요할 수 있습니다.
-  // API 스펙 상 바디는 단일 값이므로, 평균값 혹은 범위를 벗어났을 때만 할당하도록 보수적으로 접근
   if (filters.body[0] === filters.body[1]) {
     req.body = filters.body[0];
   }
@@ -327,7 +289,6 @@ export function decodeParamsToFilters(params: URLSearchParams): {
   filters: ProductFilterState;
   searchQuery: string;
 } {
-  // 깊은 복사로 기본값 가져오기
   const filters: ProductFilterState = {
     ...DEFAULT_FILTERS,
     flavors: [...DEFAULT_FILTERS.flavors],
@@ -336,13 +297,9 @@ export function decodeParamsToFilters(params: URLSearchParams): {
     roasting: [...DEFAULT_FILTERS.roasting],
   };
 
-  // flavors 파라미터 처리
   const flavorsParam = params.get('flavors');
   if (flavorsParam) {
-    const ids = flavorsParam.split(',');
-    filters.flavors = ids
-      .map((id) => FLAVOR_DEFINITIONS.find((d) => d.id === id)?.ko)
-      .filter(Boolean) as FlavorType[];
+    filters.flavors = flavorsParam.split(',') as FlavorType[];
   }
 
   const parseRange = (val: string | null): [number, number] | null => {

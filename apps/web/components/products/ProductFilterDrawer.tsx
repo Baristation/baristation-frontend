@@ -1,15 +1,10 @@
-import { RangeSlider } from '@coffee-service/ui-library';
 import { AnimatePresence, motion, useDragControls } from 'framer-motion';
 import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import {
-  FLAVOR_TYPES,
-  type FlavorType,
-  DEFAULT_FILTERS,
-  type ProductFilterState,
-} from '@/lib/api/products';
+import { DEFAULT_FILTERS, type FlavorType, type ProductFilterState } from '@/lib/api/products';
 
+import { FlavorFilter, MetricFilter } from './filters/FilterSections';
 import ProductSearchBar from './ProductSearchBar';
 
 interface ProductFilterDrawerProps {
@@ -21,26 +16,6 @@ interface ProductFilterDrawerProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
 }
-
-function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <motion.button
-      whileTap={{ scale: 0.93 }}
-      onClick={onClick}
-      aria-pressed={active}
-      className={`cursor-pointer rounded-full px-3 py-1.5 text-xs transition-all ${
-        active
-          ? 'bg-amber-500 font-semibold text-white shadow-sm'
-          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-      }`}
-    >
-      {label}
-    </motion.button>
-  );
-}
-
-const SECTION_TITLE =
-  'font-outfit mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400';
 
 export default function ProductFilterDrawer({
   isOpen,
@@ -158,137 +133,77 @@ export default function ProductFilterDrawer({
               </div>
 
               {/* Flavor */}
-              <div className="border-t border-gray-100 py-5">
-                <p className={SECTION_TITLE}>Flavor</p>
-                <div className="flex flex-wrap gap-2">
-                  {FLAVOR_TYPES.map((a) => (
-                    <Chip
-                      key={a}
-                      label={a}
-                      active={localFilters.flavors.includes(a)}
-                      onClick={() => toggleFlavor(a)}
-                    />
-                  ))}
-                </div>
+              <div className="border-t border-gray-100 py-4">
+                <FlavorFilter selectedFlavors={localFilters.flavors} onToggle={toggleFlavor} />
               </div>
 
               {/* Metric Sections (Ungrouped) */}
-              <div className="space-y-1">
-                {/* Acidity */}
-                <div className="border-t border-gray-100 py-2.5">
-                  <p className="font-outfit mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                    <Droplets className="h-3 w-3" />
-                    Acidity
-                  </p>
-                  <RangeSlider
-                    min={1}
-                    max={10}
-                    step={1}
+              <div className="space-y-0.5">
+                <div className="border-t border-gray-100">
+                  <MetricFilter
+                    label="Acidity"
+                    icon={Droplets}
                     value={localFilters.flavor.acidity}
-                    onValueChange={(v) =>
+                    onChange={(v) =>
                       setLocalFilters({
                         ...localFilters,
-                        flavor: { ...localFilters.flavor, acidity: [v[0], v[1]] },
+                        flavor: { ...localFilters.flavor, acidity: v },
                       })
                     }
                   />
-                  <div className="mt-1 flex justify-between px-1 text-[10px] text-gray-400">
-                    <span>{localFilters.flavor.acidity[0]}</span>
-                    <span>{localFilters.flavor.acidity[1]}</span>
-                  </div>
                 </div>
 
-                {/* Sweetness */}
-                <div className="border-t border-gray-100 py-2.5">
-                  <p className="font-outfit mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                    <Sparkles className="h-3 w-3" />
-                    Sweetness
-                  </p>
-                  <RangeSlider
-                    min={1}
-                    max={10}
-                    step={1}
+                <div className="border-t border-gray-100">
+                  <MetricFilter
+                    label="Sweetness"
+                    icon={Sparkles}
                     value={localFilters.flavor.sweetness}
-                    onValueChange={(v) =>
+                    onChange={(v) =>
                       setLocalFilters({
                         ...localFilters,
-                        flavor: { ...localFilters.flavor, sweetness: [v[0], v[1]] },
+                        flavor: { ...localFilters.flavor, sweetness: v },
                       })
                     }
                   />
-                  <div className="mt-1 flex justify-between px-1 text-[10px] text-gray-400">
-                    <span>{localFilters.flavor.sweetness[0]}</span>
-                    <span>{localFilters.flavor.sweetness[1]}</span>
-                  </div>
                 </div>
 
-                {/* Body */}
-                <div className="border-t border-gray-100 py-2.5">
-                  <p className="font-outfit mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                    <Layers className="h-3 w-3" />
-                    Body
-                  </p>
-                  <RangeSlider
-                    min={1}
-                    max={5}
-                    step={1}
+                <div className="border-t border-gray-100">
+                  <MetricFilter
+                    label="Body"
+                    icon={Layers}
                     value={localFilters.body}
-                    onValueChange={(v) => setLocalFilters({ ...localFilters, body: [v[0], v[1]] })}
+                    onChange={(v) => setLocalFilters({ ...localFilters, body: v })}
                   />
-                  <div className="mt-1 flex justify-between px-1 text-[10px] text-gray-400">
-                    <span>{localFilters.body[0]}</span>
-                    <span>{localFilters.body[1]}</span>
-                  </div>
                 </div>
 
-                {/* Balance */}
-                <div className="border-t border-gray-100 py-2.5">
-                  <p className="font-outfit mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                    <Scale className="h-3 w-3" />
-                    Balance
-                  </p>
-                  <RangeSlider
-                    min={1}
-                    max={5}
-                    step={1}
+                <div className="border-t border-gray-100">
+                  <MetricFilter
+                    label="Balance"
+                    icon={Scale}
                     value={localFilters.flavor.balance}
                     colorPalette="teal"
-                    onValueChange={(v) =>
+                    onChange={(v) =>
                       setLocalFilters({
                         ...localFilters,
-                        flavor: { ...localFilters.flavor, balance: [v[0], v[1]] },
+                        flavor: { ...localFilters.flavor, balance: v },
                       })
                     }
                   />
-                  <div className="mt-1 flex justify-between px-1 text-[10px] text-gray-400">
-                    <span>{localFilters.flavor.balance[0]}</span>
-                    <span>{localFilters.flavor.balance[1]}</span>
-                  </div>
                 </div>
 
-                {/* Roasting */}
-                <div className="border-t border-gray-100 py-2.5 pb-2.5">
-                  <p className="font-outfit mb-1.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-                    <Flame className="h-3 w-3" />
-                    Roasting
-                  </p>
-                  <RangeSlider
-                    min={1}
-                    max={5}
-                    step={1}
+                <div className="border-t border-gray-100">
+                  <MetricFilter
+                    label="Roasting"
+                    icon={Flame}
                     value={localFilters.roasting}
                     colorPalette="espresso"
-                    onValueChange={(v) =>
+                    onChange={(v) =>
                       setLocalFilters({
                         ...localFilters,
-                        roasting: [v[0], v[1]],
+                        roasting: v,
                       })
                     }
                   />
-                  <div className="mt-1 flex justify-between px-1 text-[10px] text-gray-400">
-                    <span>{localFilters.roasting[0]}</span>
-                    <span>{localFilters.roasting[1]}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -298,7 +213,7 @@ export default function ProductFilterDrawer({
               <div className="flex gap-3">
                 <button
                   onClick={handleApply}
-                  className="font-outfit flex-[2] rounded-2xl bg-amber-500 py-4 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-amber-600 active:scale-[0.98]"
+                  className="font-outfit flex-[2] rounded-2xl bg-amber-500 py-4 text-sm font-semibold text-white shadow-lg transition-all hover:bg-amber-600 active:scale-[0.98]"
                 >
                   적용하기
                 </button>

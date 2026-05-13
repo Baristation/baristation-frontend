@@ -1,17 +1,12 @@
 'use client';
 
-import { RangeSlider } from '@coffee-service/ui-library';
 import { motion } from 'framer-motion';
 import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import {
-  FLAVOR_TYPES,
-  type FlavorType,
-  DEFAULT_FILTERS,
-  type ProductFilterState,
-} from '@/lib/api/products';
+import { DEFAULT_FILTERS, type FlavorType, type ProductFilterState } from '@/lib/api/products';
 
+import { FlavorFilter, MetricFilter, isFiltered } from './filters/FilterSections';
 import ProductSearchBar from './ProductSearchBar';
 
 interface ProductFilterPanelProps {
@@ -20,40 +15,6 @@ interface ProductFilterPanelProps {
   onReset: () => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-}
-
-const isFiltered = (filters: ProductFilterState) =>
-  filters.flavors.length > 0 ||
-  filters.flavor.balance[0] !== 1 ||
-  filters.flavor.balance[1] !== 5 ||
-  filters.flavor.sweetness[0] !== 1 ||
-  filters.flavor.sweetness[1] !== 10 ||
-  filters.flavor.acidity[0] !== 1 ||
-  filters.flavor.acidity[1] !== 10 ||
-  filters.body[0] !== 1 ||
-  filters.body[1] !== 5 ||
-  filters.roasting[0] !== 1 ||
-  filters.roasting[1] !== 5;
-
-const SECTION_TITLE =
-  'font-outfit mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-500';
-
-/** 아로마 Chip */
-function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <motion.button
-      whileTap={{ scale: 0.93 }}
-      onClick={onClick}
-      aria-pressed={active}
-      className={`cursor-pointer rounded-full px-3 py-1 text-xs transition-all ${
-        active
-          ? 'bg-amber-500 font-semibold text-white shadow-sm'
-          : 'border border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 hover:bg-gray-100'
-      }`}
-    >
-      {label}
-    </motion.button>
-  );
 }
 
 export default function ProductFilterPanel({
@@ -84,7 +45,7 @@ export default function ProductFilterPanel({
 
   return (
     <aside className="sticky top-24 hidden h-[calc(100vh-8rem)] w-56 shrink-0 flex-col md:flex">
-      <div className="scrollbar-hide flex-1 overflow-y-auto">
+      <div className="scrollbar-hide flex-1 overflow-x-visible overflow-y-auto px-4 pb-4">
         {/* 헤더 */}
         <div className="mb-5 flex items-center justify-between">
           <span className="font-outfit text-sm font-semibold text-gray-800">Filter</span>
@@ -110,133 +71,63 @@ export default function ProductFilterPanel({
         </div>
 
         {/* Flavor */}
-        <div className="border-b border-gray-100 pb-5">
-          <p className={SECTION_TITLE}>Flavor</p>
-          <div className="flex flex-wrap gap-2">
-            {FLAVOR_TYPES.map((a) => (
-              <Chip
-                key={a}
-                label={a}
-                active={localFilters.flavors.includes(a)}
-                onClick={() => toggleFlavor(a)}
-              />
-            ))}
-          </div>
+        <div className="border-b border-gray-100 pb-4">
+          <FlavorFilter selectedFlavors={localFilters.flavors} onToggle={toggleFlavor} />
         </div>
 
         {/* Metrics Section */}
-        <div className="space-y-4 py-3">
-          {/* Acidity */}
-          <div className="border-b border-gray-100 pb-4">
-            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-              <Droplets className="h-3 w-3" />
-              Acidity
-            </p>
-            <RangeSlider
-              min={1}
-              max={10}
-              step={1}
-              value={localFilters.flavor.acidity}
-              onValueChange={(v) =>
-                setLocalFilters({
-                  ...localFilters,
-                  flavor: { ...localFilters.flavor, acidity: [v[0], v[1]] },
-                })
-              }
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{localFilters.flavor.acidity[0]}</span>
-              <span>{localFilters.flavor.acidity[1]}</span>
-            </div>
-          </div>
+        <div className="space-y-1 py-3">
+          <MetricFilter
+            label="Acidity"
+            icon={Droplets}
+            value={localFilters.flavor.acidity}
+            onChange={(v) =>
+              setLocalFilters({
+                ...localFilters,
+                flavor: { ...localFilters.flavor, acidity: v },
+              })
+            }
+          />
 
-          {/* Sweetness */}
-          <div className="border-b border-gray-100 pb-4">
-            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-              <Sparkles className="h-3 w-3" />
-              Sweetness
-            </p>
-            <RangeSlider
-              min={1}
-              max={10}
-              step={1}
-              value={localFilters.flavor.sweetness}
-              onValueChange={(v) =>
-                setLocalFilters({
-                  ...localFilters,
-                  flavor: { ...localFilters.flavor, sweetness: [v[0], v[1]] },
-                })
-              }
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{localFilters.flavor.sweetness[0]}</span>
-              <span>{localFilters.flavor.sweetness[1]}</span>
-            </div>
-          </div>
+          <MetricFilter
+            label="Sweetness"
+            icon={Sparkles}
+            value={localFilters.flavor.sweetness}
+            onChange={(v) =>
+              setLocalFilters({
+                ...localFilters,
+                flavor: { ...localFilters.flavor, sweetness: v },
+              })
+            }
+          />
 
-          {/* Body */}
-          <div className="border-b border-gray-100 pb-4">
-            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-              <Layers className="h-3 w-3" />
-              Body
-            </p>
-            <RangeSlider
-              min={1}
-              max={5}
-              step={1}
-              value={localFilters.body}
-              onValueChange={(v) => setLocalFilters({ ...localFilters, body: [v[0], v[1]] })}
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{localFilters.body[0]}</span>
-              <span>{localFilters.body[1]}</span>
-            </div>
-          </div>
+          <MetricFilter
+            label="Body"
+            icon={Layers}
+            value={localFilters.body}
+            onChange={(v) => setLocalFilters({ ...localFilters, body: v })}
+          />
 
-          {/* Balance */}
-          <div className="border-b border-gray-100 pb-4">
-            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-              <Scale className="h-3 w-3" />
-              Balance
-            </p>
-            <RangeSlider
-              min={1}
-              max={5}
-              step={1}
-              value={localFilters.flavor.balance}
-              colorPalette="teal"
-              onValueChange={(v) =>
-                setLocalFilters({
-                  ...localFilters,
-                  flavor: { ...localFilters.flavor, balance: [v[0], v[1]] },
-                })
-              }
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{localFilters.flavor.balance[0]}</span>
-              <span>{localFilters.flavor.balance[1]}</span>
-            </div>
-          </div>
+          <MetricFilter
+            label="Balance"
+            icon={Scale}
+            value={localFilters.flavor.balance}
+            colorPalette="teal"
+            onChange={(v) =>
+              setLocalFilters({
+                ...localFilters,
+                flavor: { ...localFilters.flavor, balance: v },
+              })
+            }
+          />
 
-          {/* Roasting */}
-          <div className="pb-4">
-            <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-              <Flame className="h-3 w-3" />
-              Roasting
-            </p>
-            <RangeSlider
-              min={1}
-              max={5}
-              step={1}
-              value={localFilters.roasting}
-              colorPalette="espresso"
-              onValueChange={(v) => setLocalFilters({ ...localFilters, roasting: [v[0], v[1]] })}
-            />
-            <div className="mt-1 flex justify-between text-[10px] text-gray-400">
-              <span>{localFilters.roasting[0]}</span>
-              <span>{localFilters.roasting[1]}</span>
-            </div>
-          </div>
+          <MetricFilter
+            label="Roasting"
+            icon={Flame}
+            value={localFilters.roasting}
+            colorPalette="espresso"
+            onChange={(v) => setLocalFilters({ ...localFilters, roasting: v })}
+          />
         </div>
       </div>
 
@@ -244,7 +135,7 @@ export default function ProductFilterPanel({
       <div className="shrink-0 border-t border-gray-100 bg-white pt-4 pb-2">
         <button
           onClick={handleApply}
-          className="font-outfit w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-amber-600"
+          className="font-outfit w-full rounded-xl bg-amber-500 py-3.5 text-sm font-semibold text-white transition-all hover:bg-amber-600 hover:shadow-lg active:scale-[0.98]"
         >
           적용하기
         </button>
