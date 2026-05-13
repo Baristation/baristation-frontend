@@ -52,7 +52,7 @@ export async function searchProductsAction(
 
 export async function getProductDetailAction(
   id: number,
-): Promise<{ success: boolean; data?: ProductDetailResponse['data'] }> {
+): Promise<{ success: boolean; data?: ProductDetailResponse['data']; error?: string }> {
   try {
     const res = await fetchBackend(`/api/products/${id}`, {
       method: 'GET',

@@ -109,7 +109,7 @@ export default function SocialButton({ provider }: SocialButtonProps) {
         // 경로와 쿼리 스트링만 남기고 정규화 (보안 강화)
         const url = new URL(rawRedirect, window.location.origin);
         redirectTarget = url.pathname + url.search;
-      } catch (e) {
+      } catch {
         redirectTarget = '/';
       }
     }
