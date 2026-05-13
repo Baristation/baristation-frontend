@@ -22,7 +22,7 @@ export function FlavorFilter({ selectedFlavors, onToggle }: FlavorFilterProps) {
   return (
     <div className="py-2">
       <p className={SECTION_TITLE}>Flavor</p>
-      <div className="grid grid-cols-5 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+      <div className="grid grid-cols-5 gap-2 md:grid-cols-4 lg:grid-cols-5">
         {FLAVOR_DEFINITIONS.map((def) => {
           const active = selectedFlavors.includes(def.id);
           return (
