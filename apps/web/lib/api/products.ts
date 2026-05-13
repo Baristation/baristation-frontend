@@ -4,15 +4,54 @@ export interface FlavorNoteDTO {
   flavorNoteId: number;
   flavorCategory: string;
   nameKo: string;
-  nameEn: string;
+  nameEn: string | null;
   flavorImageUrl: string;
 }
 
 export interface ProductImageDTO {
   productImageId: number;
-  imageType: string;
+  imageType: 'THUMB' | 'SUB';
   imageUrl: string;
   sortOrder: number;
+}
+
+export interface BeanSummaryDTO {
+  productId: number;
+  beanNameKo: string;
+  beanNameEn: string;
+  origin: string;
+  region: string;
+  process: string;
+  productImage: ProductImageDTO | null;
+}
+
+export interface RoasterDTO {
+  roasterId: number;
+  nameKo: string;
+  nameEn: string;
+  homepageUrl: string;
+  description: string;
+}
+
+export interface ProductDetailDTO {
+  beanSummary: BeanSummaryDTO;
+  roaster: RoasterDTO;
+  roastingType: string;
+  flavorNotes: FlavorNoteDTO[];
+  description: string;
+  agtronMin: number | null;
+  agtronMax: number | null;
+  acidity: number | null;
+  sweetness: number | null;
+  body: number | null;
+  balance: number | null;
+  images: ProductImageDTO[];
+}
+
+export interface ProductDetailResponse {
+  statusCode: string;
+  message: string;
+  data: ProductDetailDTO;
 }
 
 export interface ProductSearchItem {

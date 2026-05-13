@@ -5,13 +5,14 @@ import { motion } from 'framer-motion';
 import { Droplets, Flame, Layers, Scale, Sparkles } from 'lucide-react';
 
 import SectionContainer from '@/components/layout/SectionContainer';
+import { cn } from '@/lib/utils';
 
 interface FlavorProfileProps {
-  balance: number;
-  sweetness: number;
-  acidity: number;
-  body: number;
-  roasting: number;
+  balance: number | null;
+  sweetness: number | null;
+  acidity: number | null;
+  body: number | null;
+  roastingType: string;
 }
 
 function ProfileIndicator({
@@ -21,7 +22,7 @@ function ProfileIndicator({
   colorPalette = 'amber',
 }: {
   label: string;
-  value: number;
+  value: number | null;
   max?: number;
   colorPalette?: ColorPalette;
 }) {
@@ -30,9 +31,8 @@ function ProfileIndicator({
     감미: Sparkles,
     바디감: Layers,
     밸런스: Scale,
-    로스팅: Flame,
   };
-  const Icon = ICONS[label] || Flame;
+  const Icon = ICONS[label] || Sparkles;
 
   return (
     <div className="flex flex-col space-y-3">
@@ -44,16 +44,16 @@ function ProfileIndicator({
           </span>
         </div>
         <span className="font-outfit text-xs font-medium text-gray-500">
-          {value} / {max}
+          {value !== null ? `${value} / ${max}` : 'N/A'}
         </span>
       </div>
       <RatingScale
         max={max}
-        value={value}
+        value={value || 0}
         readOnly
         variant="indicator"
-        colorPalette={colorPalette}
-        className="w-full"
+        colorPalette={value !== null ? colorPalette : 'stone'}
+        className={cn('w-full', value === null && 'opacity-30')}
       />
     </div>
   );
@@ -64,40 +64,54 @@ export function FlavorProfileSection({
   sweetness,
   acidity,
   body,
-  roasting,
+  roastingType,
 }: FlavorProfileProps) {
+  const ROAST_MAP: Record<string, string> = {
+    LIGHT: 'Light',
+    LIGHTMEDIUM: 'Light-Medium',
+    MEDIUM: 'Medium',
+    MEDIUMDARK: 'Medium-Dark',
+    DARK: 'Dark',
+  };
+
+  const formattedRoast = ROAST_MAP[roastingType] || roastingType || 'N/A';
+
   return (
-    <SectionContainer className="py-12 md:py-16">
+    <SectionContainer className="border-t border-gray-100 py-12 md:py-16">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-100px' }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <div className="mb-12">
-          <h2 className="font-playfair text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-gray-900">
-            Flavor Profile
-          </h2>
-          <p className="mt-2 text-[clamp(0.875rem,2vw,1.125rem)] text-gray-500">
-            원두가 가진 고유의 향미 특성
-          </p>
+        <div className="mb-12 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="font-playfair text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-gray-900">
+              Flavor Profile
+            </h2>
+            <p className="mt-2 text-[clamp(0.875rem,2vw,1.125rem)] text-gray-500">
+              원두가 가진 고유의 향미 특성
+            </p>
+          </div>
+          <div className="flex h-fit items-center gap-2 rounded-full bg-stone-100 px-4 py-1.5">
+            <Flame className="h-4 w-4 text-stone-600" />
+            <span className="font-outfit text-xs font-bold tracking-widest text-stone-800 uppercase">
+              Roast: {formattedRoast}
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
-          <ProfileIndicator label="산미" value={acidity} />
-          <ProfileIndicator label="감미" value={sweetness} />
-          <ProfileIndicator label="바디감" value={body} />
-        </div>
-
-        <div className="mt-12 mb-12 h-px w-full bg-gray-100" />
-
-        <div className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-16 gap-y-12 md:grid-cols-2 lg:grid-cols-2">
+          <ProfileIndicator label="산미" value={acidity} colorPalette="teal" />
+          <ProfileIndicator label="감미" value={sweetness} colorPalette="amber" />
+          <ProfileIndicator label="바디감" value={body} colorPalette="espresso" />
           <ProfileIndicator
             label="밸런스"
             value={balance}
-            colorPalette={balance <= 2 ? 'red' : balance === 3 ? 'blue' : 'green'}
+            colorPalette={
+              balance === null ? 'stone' : balance <= 2 ? 'amber' : balance === 3 ? 'teal' : 'amber'
+            }
           />
-          <ProfileIndicator label="로스팅" value={roasting} colorPalette="espresso" />
         </div>
       </motion.div>
     </SectionContainer>

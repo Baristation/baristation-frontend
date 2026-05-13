@@ -1,12 +1,10 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getMainDataAction } from '@/actions/main.action';
 import { getProductDetailAction } from '@/actions/products.action';
 import PageContainer from '@/components/layout/PageContainer';
-import RecommendedProducts from '@/components/main/RecommendedProducts';
-import { mapSearchItemToProductInfo } from '@/lib/api/products';
 
+import { FlavorProfileSection } from './_components/FlavorProfileSection';
 import { ProductDetailHero } from './_components/ProductDetailHero';
 import { ProductInfoTable } from './_components/ProductInfoTable';
 
@@ -36,11 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // TODO: 상세 응답 스펙 확정 시 맵퍼 수정 필요. 우선 목록과 동일한 스키마로 가정합니다.
-  const product = mapSearchItemToProductInfo(result.data);
-
-  const title = `${product.name} - Baristation`;
-  const description = `${product.origin}에서 온 ${product.primaryFlavor} 향미의 매력적인 상품입니다.`;
+  const product = result.data;
+  const title = `${product.beanSummary.beanNameKo} - Baristation`;
+  const flavors = product.flavorNotes.map((f) => f.nameKo).join(', ');
+  const description = `${product.beanSummary.origin}에서 온 ${flavors} 향미의 매력적인 원두입니다.`;
+  const imageUrl = product.beanSummary.productImage?.imageUrl || '/images/default-product.png';
 
   return {
     title,
@@ -50,8 +48,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images: [
         {
-          url: product.flavorImageUrl,
-          alt: `${product.name} 이미지`,
+          url: imageUrl,
+          alt: `${product.beanSummary.beanNameKo} 이미지`,
         },
       ],
     },
@@ -71,40 +69,26 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  // TODO: 상세 데이터 스키마 확정 전까지 검색 아이템 스키마로 임시 매핑
-  const product = mapSearchItemToProductInfo(result.data);
-
-  const mainDataResult = await getMainDataAction();
-  const recommendedProducts =
-    mainDataResult.success && mainDataResult.data ? mainDataResult.data.recommendedProducts : [];
+  const product = result.data;
 
   return (
     <PageContainer>
       <ProductDetailHero
-        name={product.name}
-        origin={product.origin}
-        roastery={product.roastery}
-        flavorImageUrl={product.flavorImageUrl}
-        primaryFlavor={product.primaryFlavor}
-        purchaseUrl={product.purchaseUrl}
+        beanSummary={product.beanSummary}
+        roaster={product.roaster}
+        agtronMin={product.agtronMin}
+        agtronMax={product.agtronMax}
+        additionalImages={product.images}
+        flavorNotes={product.flavorNotes}
       />
-      <ProductInfoTable
-        origin={product.origin}
-        category={product.category}
-        blend={product.blend}
-        processing={product.processing}
-        variety={product.variety}
-        altitude={product.altitude}
-        description={product.description}
+      <ProductInfoTable beanSummary={product.beanSummary} description={product.description} />
+      <FlavorProfileSection
+        balance={product.balance}
+        sweetness={product.sweetness}
+        acidity={product.acidity}
+        body={product.body}
+        roastingType={product.roastingType}
       />
-      {/* <FlavorProfileSection
-        balance={product.balance || 0}
-        sweetness={product.sweetness || 0}
-        acidity={product.acidity || 0}
-        body={product.body || 0}
-        roasting={product.roasting || 0}
-      /> */}
-      <RecommendedProducts products={recommendedProducts} />
     </PageContainer>
   );
 }

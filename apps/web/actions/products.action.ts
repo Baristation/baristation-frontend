@@ -1,7 +1,11 @@
 'use server';
 
 import { fetchBackend } from '@/lib/api/backend';
-import { ProductSearchRequest, ProductSearchResponse } from '@/lib/api/products';
+import {
+  ProductDetailResponse,
+  ProductSearchRequest,
+  ProductSearchResponse,
+} from '@/lib/api/products';
 
 export async function searchProductsAction(
   params: ProductSearchRequest,
@@ -44,7 +48,7 @@ export async function searchProductsAction(
 
 export async function getProductDetailAction(
   id: number,
-): Promise<{ success: boolean; data?: any }> {
+): Promise<{ success: boolean; data?: ProductDetailResponse['data'] }> {
   try {
     const res = await fetchBackend(`/api/products/${id}`, {
       method: 'GET',
@@ -52,7 +56,7 @@ export async function getProductDetailAction(
     if (!res.ok) {
       return { success: false };
     }
-    const body = await res.json();
+    const body: ProductDetailResponse = await res.json();
     return { success: true, data: body.data };
   } catch (error) {
     return { success: false };
