@@ -30,7 +30,7 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 
 - **주요 도구**: `next/link`, Tailwind CSS v4, `framer-motion`, `lucide-react`
 - **스타일링 규칙**: Tailwind CSS v4만 사용, glassmorphism 효과는 `backdrop-blur` 활용
-- **기타 제약**: `authUtils`로 `localStorage` 토큰 유무를 감지하여 인증 상태 판별
+- **기타 제약**: `useAuth` 커스텀 훅을 통해 서버 세션(BFF 쿠키) 및 인증 상태를 관리함
 
 #### 3. Data Interface (I/O)
 
@@ -40,7 +40,7 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 | 상태명 | 타입 | 초기값 | 설명 |
 |--------|------|--------|------|
 | `isScrolled` | `boolean` | `false` | 스크롤 여부에 따른 배경 전환 트리거 |
-| `isAuthenticated` | `boolean` | `false` | `localStorage` 토큰 유무로 판별 |
+| `isAuthenticated` | `boolean` | `false` | `useAuth` 훅을 통해 제공되는 인증 여부 |
 
 **Events / Callbacks**: 없음
 
@@ -50,8 +50,8 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 | ------------------- | ------------- | --------------------------------------------------- |
 | **Default (top)**   | 스크롤 최상단 | 배경 완전 투명                                      |
 | **Scrolled**        | 스크롤 발생   | 반투명 Glassmorphism (`backdrop-blur`, 배경색 노출) |
-| **Unauthenticated** | 토큰 없음     | 우측 User 아이콘 (→ `/login`)                       |
-| **Authenticated**   | 토큰 있음     | 우측 LogOut 아이콘 (→ `authUtils.removeToken` 실행) |
+| **Unauthenticated** | 세션 없음     | 우측 User 아이콘 (→ `/login`)                       |
+| **Authenticated**   | 세션 있음     | 우측 LogOut 아이콘 (→ `logout()` 실행)              |
 
 #### 5. Functional Requirements (단계별 요구사항)
 
@@ -59,8 +59,8 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 2. 좌측에 `Playfair Display` 폰트의 **"Baristation"** 로고를 배치한다
 3. 중앙/우측에 Home, Product Info, Classes 메뉴를 제공한다
 4. 우측 끝 북마크 아이콘으로 저장 목록 페이지로 이동한다
-5. `localStorage` 토큰 유무를 감지하여 User / LogOut 아이콘을 동적으로 전환한다
-6. LogOut 아이콘 클릭 시 `authUtils.removeToken`을 실행하여 세션을 종료한다
+5. `useAuth` 훅의 `isAuthenticated` 상태를 감지하여 User / LogOut 아이콘을 동적으로 전환한다
+6. LogOut 아이콘 클릭 시 `logout()` 함수를 실행하여 BFF 세션을 종료한다
 
 #### 6. Design Spec (디자인 명세)
 
@@ -77,7 +77,7 @@ Baristation 서비스의 메인 진입점(Landing Page)이자 메인 페이지(M
 
 - [ ] (기능) 스크롤 전 배경이 완전 투명이고, 스크롤 후 Glassmorphism 효과가 적용된다
 - [ ] (기능) 미인증 상태에서 User 아이콘이 노출되고 클릭 시 `/login`으로 이동한다
-- [ ] (기능) 인증 상태에서 LogOut 아이콘이 노출되고 클릭 시 토큰이 삭제된다
+- [ ] (기능) 인증 상태에서 LogOut 아이콘이 노출되고 클릭 시 로그아웃 처리가 수행된다
 - [ ] (인터랙션) 배경 전환이 `0.3s ease-out`으로 부드럽게 동작한다
 - [ ] (디자인) 로고가 `Playfair Display` 폰트로 렌더링된다
 
@@ -299,7 +299,7 @@ interface FlavorCardProps {
 #### 2. Tech Stack & Constraints (기술 및 제약)
 
 - **주요 도구**: `framer-motion`, Tailwind CSS v4
-- **기타 제약**: Client Component 필수, 백엔드 연동 전에는 `mockMainData`에서 데이터 조회
+- **기타 제약**: Client Component 필수, `getMainDataAction`을 통해 추천 상품 데이터를 페칭함
 
 #### 3. Data Interface (I/O)
 
@@ -343,7 +343,7 @@ interface RecommendedProductsProps {
 
 1. `products` 배열을 순서대로 `ProductCard`로 렌더링한다
 2. 스크롤 진입 시 카드가 순차적으로 페이드인된다
-3. 백엔드 연동 전에는 `apps/web/lib/api/main.ts`의 `mockMainData`를 사용한다
+3. 데이터 페칭 결과에 따라 유동적으로 상품 리스트를 렌더링한다
 
 #### 6. Design Spec (디자인 명세)
 
@@ -361,7 +361,7 @@ interface RecommendedProductsProps {
 
 - [ ] (기능) 원두 카드 목록이 정상 렌더링된다
 - [ ] (기능) 빈 데이터 시 빈 상태 안내가 표시된다
-- [ ] (기능) 백엔드 없이 Mock 데이터로 정상 동작한다
+- [ ] (기능) `getMainDataAction` 연동을 통해 실제 백엔드 데이터로 정상 동작한다
 - [ ] (인터랙션) 스크롤 진입 시 카드가 순차 페이드인된다
 
 ---
@@ -496,7 +496,7 @@ RootLayout
   └── Footer
 ```
 
-**데이터 흐름**: 현재 백엔드 API 연동 이전 단계로, `apps/web/lib/api/main.ts`의 `mockMainData`를 조회하여 하위 컴포넌트에 Props로 주입합니다.
+**데이터 흐름**: `getMainDataAction` (Server Action)을 통해 메인 페이지에 필요한 데이터를 페칭하여 하위 컴포넌트에 Props로 주입합니다.
 
 ---
 
@@ -505,7 +505,7 @@ RootLayout
 - **SPA 라우팅 연동**: 로그인 페이지, 원두 정보 페이지 등 내부 라우팅 요소 완비
 - **지도 라이브러리 연동**: `react-kakao-maps-sdk`를 통한 카카오 지도 기능 최적화
 - **상단 GNB 이펙트**: 최상단 투명 → 스크롤 시 반투명/배경색 전환
-- **Mock 지원**: 백엔드 없이 `mockMainData`로 전체 UI 동작 검증 가능
+- **실데이터 연동**: `getMainDataAction`을 통한 실제 추천 상품 및 향미 데이터 연동
 
 ---
 

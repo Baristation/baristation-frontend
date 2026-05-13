@@ -18,15 +18,15 @@ Baristation 서비스의 원두 정보 탐색(Product Discovery) 페이지입니
 
 | 아로마 | 대표 식재료     | 배경 색상 (HEX) | Tailwind 커스텀 클래스 |
 | ------ | --------------- | --------------- | ---------------------- |
-| 캐러멜 | 캐러멜 설탕     | `#F2D49B`       | `bg-flavor-caramel`    |
-| 와인   | 레드 베리       | `#E8C5C0`       | `bg-flavor-wine`       |
-| 초콜릿 | 다크 초콜릿     | `#C9A882`       | `bg-flavor-chocolate`  |
 | 과일   | 시트러스/복숭아 | `#FDDCB5`       | `bg-flavor-fruit`      |
+| 초콜릿 | 다크 초콜릿     | `#C9A882`       | `bg-flavor-chocolate`  |
+| 꽃     | 자스민/장미     | `#F5D5D5`       | `bg-flavor-floral`     |
+| 견과   | 아몬드/헤이즐넛 | `#E0CAAA`       | `bg-flavor-nutty`      |
+| 캐러멜 | 캐러멜 설탕     | `#F2D49B`       | `bg-flavor-caramel`    |
+| 스모크 | 훈연 우드       | `#D0CEC8`       | `bg-flavor-smoky`      |
+| 와인   | 레드 베리       | `#E8C5C0`       | `bg-flavor-wine`       |
 | 허브   | 민트/허브 잎    | `#C9E4CA`       | `bg-flavor-herb`       |
 | 맥아   | 보리/곡물       | `#E8D9B5`       | `bg-flavor-malt`       |
-| 견과   | 아몬드/헤이즐넛 | `#E0CAAA`       | `bg-flavor-nutty`      |
-| 꽃     | 자스민/장미     | `#F5D5D5`       | `bg-flavor-floral`     |
-| 스모크 | 훈연 우드       | `#D0CEC8`       | `bg-flavor-smoky`      |
 
 ---
 
@@ -152,12 +152,12 @@ interface ProductSearchBarProps {
 interface ProductFilterState {
   flavors: FlavorType[]; // 선택된 아로마 (다중 선택)
   flavor: {
-    balance: number; // 밸런스 1~5 (0 = 미선택)
-    sweetness: number; // 단맛 1~5 (0 = 미선택)
-    acidity: number; // 산미 1~5 (0 = 미선택)
+    balance: [number, number]; // 밸런스 범위 [min, max] (1~5)
+    sweetness: [number, number]; // 단맛 범위 [min, max] (1~5)
+    acidity: [number, number]; // 산미 범위 [min, max] (1~5)
   };
-  body: 0 | 1 | 2 | 3 | 4 | 5; // 바디감 0 = 미선택, 1~5
-  roasting: 0 | 1 | 2 | 3 | 4 | 5; // 로스팅 0 = 미선택, 1~5
+  body: [number, number]; // 바디감 범위 [min, max] (1~5)
+  roasting: [number, number]; // 로스팅 범위 [min, max] (1~5)
 }
 
 type FlavorType =
@@ -198,14 +198,13 @@ interface ProductFilterPanelProps {
 #### 5. Functional Requirements (단계별 요구사항)
 
 1. **Search** 구역: 패널 최상단에 `ProductSearchBar`를 포함하여 이름/원산지 검색 연동
-2. **Flavor (향)** 섹션: 9개 아로마 타입을 Chip 형태로 나열, 다중 선택 가능
-3. **Flavor (맛)** 섹션: **산미·단맛·밸런스**를 각 연속된 N등분 막대 형태(Rating Bar) 1~5단계로 표시
-4. **Body (바디감)** 섹션: 1(매우 가벼움) ~ 5(매우 묵직함) Rating Bar 5단계로 확장 표시
-5. **Roasting** 섹션: 1(Light) ~ 5(Dark) Rating Bar 5단계로 확장 표시 (단계: Light, Light Medium, Medium, Medium Dark, Dark)
-6. 모든 필터링 조작은 즉시 반영되지 않고 `localFilters` 상태만 갱신한다
-7. 하단에 스티키(Sticky)하게 자리잡은 "적용하기" 버튼을 클릭할 때 `onChange(localFilters)`를 호출하여 상위 컨텍스트에 반영한다
-8. 하나 이상의 필터가 선택되면 상단에 "초기화" 버튼이 노출된다
-9. 초기화 버튼 클릭 시 `onReset()`을 호출하여 모든 필터를 해제한다
+2. **Flavor (향)** 섹션: 17개 아로마 카테고리를 Chip 형태로 나열, 다중 선택 가능
+3. **맛 및 프로파일** 섹션: **산미·단맛·밸런스·바디감·로스팅**을 `RangeSlider`를 이용해 범위(Range) 필터링 가능하게 구현
+4. **RangeSlider UI**: 슬라이더 핸들을 조절하여 최소/최대값을 설정하며, 핸들 상단에 현재 값을 나타내는 `Tooltip`을 노출한다
+5. 모든 필터링 조작은 즉시 반영되지 않고 `localFilters` 상태만 갱신한다
+6. 하단에 스티키(Sticky)하게 자리잡은 "적용하기" 버튼을 클릭할 때 `onChange(localFilters)`를 호출하여 상위 컨텍스트에 반영한다
+7. 하나 이상의 필터가 기본값([1, 5])을 벗어나면 상단에 "초기화" 버튼이 노출된다
+8. 초기화 버튼 클릭 시 `onReset()`을 호출하여 모든 필터를 해제한다
 
 #### 6. Design Spec (디자인 명세)
 
@@ -506,13 +505,16 @@ GET /api/products/search?keyword={keyword}&flavorCategory={category}&minAcidity=
 | ---------------- | -------- | -------------------------------------- | ---- |
 | `keyword`        | `string` | 원두명 / 생산지 / 로스터명 키워드 검색 | ✗    |
 | `flavorCategory` | `string` | 맛 카테고리 (FRUITY, NUTTY 등 Enum)    | ✗    |
-| `minAcidity`     | `number` | 산미 최소값 (1~10)                     | ✗    |
-| `maxAcidity`     | `number` | 산미 최대값 (1~10)                     | ✗    |
-| `minSweetness`   | `number` | 단맛 최소값 (1~10)                     | ✗    |
-| `maxSweetness`   | `number` | 단맛 최대값 (1~10)                     | ✗    |
+| `minAcidity`     | `number` | 산미 최소값 (1~10 단위 확장 가능)      | ✗    |
+| `maxAcidity`     | `number` | 산미 최대값 (1~10 단위 확장 가능)      | ✗    |
+| `minSweetness`   | `number` | 단맛 최소값 (1~10 단위 확장 가능)      | ✗    |
+| `maxSweetness`   | `number` | 단맛 최대값 (1~10 단위 확장 가능)      | ✗    |
 | `body`           | `number` | 바디감 1~5                             | ✗    |
+| `roastingType`   | `string` | 로스팅 타입 (LIGHT, MEDIUM 등 Enum)    | ✗    |
 | `page`           | `number` | 페이지 번호 (0부터 시작)               | ✗    |
 | `size`           | `number` | 한 페이지 당 아이템 수 (기본 12)       | ✗    |
+| `sortBy`         | `string` | 정렬 기준 (예: 'id', 'name')           | ✗    |
+| `sort`           | `string` | 정렬 방향 ('asc', 'desc')              | ✗    |
 
 ### Response Body
 
