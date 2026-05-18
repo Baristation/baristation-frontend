@@ -152,11 +152,11 @@ interface ProductSearchBarProps {
 interface ProductFilterState {
   flavors: FlavorType[]; // 선택된 아로마 (다중 선택)
   flavor: {
-    balance: [number, number]; // 밸런스 범위 [min, max] (1~5)
-    sweetness: [number, number]; // 단맛 범위 [min, max] (1~5)
-    acidity: [number, number]; // 산미 범위 [min, max] (1~5)
+    balance: [number, number]; // 밸런스 범위 [min, max] (0~5)
+    sweetness: [number, number]; // 단맛 범위 [min, max] (0~5)
+    acidity: [number, number]; // 산미 범위 [min, max] (0~5)
   };
-  body: [number, number]; // 바디감 범위 [min, max] (1~5)
+  body: [number, number]; // 바디감 범위 [min, max] (0~5)
   roasting: string | null; // 단일 로스팅 Enum 또는 null ('LIGHT' | 'MEDIUMLIGHT' | 'MEDIUM' | 'MEDIUMDARK' | 'DARK')
 }
 

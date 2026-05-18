@@ -65,7 +65,7 @@ export function MetricFilter({
   label,
   icon: Icon,
   value,
-  min = 1,
+  min = 0,
   max = 5,
   step = 1,
   colorPalette = 'amber',
@@ -180,12 +180,12 @@ export function RoastingFilter({ value, onChange }: RoastingFilterProps) {
  */
 export const isFiltered = (filters: ProductFilterState) =>
   filters.flavors.length > 0 ||
-  filters.flavor.balance[0] !== 1 ||
+  filters.flavor.balance[0] !== 0 ||
   filters.flavor.balance[1] !== 5 ||
-  filters.flavor.sweetness[0] !== 1 ||
+  filters.flavor.sweetness[0] !== 0 ||
   filters.flavor.sweetness[1] !== 5 ||
-  filters.flavor.acidity[0] !== 1 ||
+  filters.flavor.acidity[0] !== 0 ||
   filters.flavor.acidity[1] !== 5 ||
-  filters.body[0] !== 1 ||
+  filters.body[0] !== 0 ||
   filters.body[1] !== 5 ||
   filters.roasting !== null;

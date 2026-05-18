@@ -234,8 +234,8 @@ export interface ProductFilterState {
 
 export const DEFAULT_FILTERS: ProductFilterState = {
   flavors: [],
-  flavor: { balance: [1, 5], sweetness: [1, 5], acidity: [1, 5] },
-  body: [1, 5],
+  flavor: { balance: [0, 5], sweetness: [0, 5], acidity: [0, 5] },
+  body: [0, 5],
   roasting: null,
 };
 
@@ -261,7 +261,7 @@ export function isValidRoastingType(val: any): val is RoastingFilterValue {
 /** 수치 지표 범위를 정제하고 검증하는 헬퍼 함수 */
 export function sanitizeRange(
   range: any,
-  minDefault: number = 1,
+  minDefault: number = 0,
   maxDefault: number = 5,
   domainMin: number = 0,
   domainMax: number = 5,
@@ -302,13 +302,13 @@ export function encodeFiltersToParams(
     params.set('flavors', filters.flavors.join(','));
   }
 
-  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5)
+  if (filters.flavor.balance[0] !== 0 || filters.flavor.balance[1] !== 5)
     params.set('balance', filters.flavor.balance.join('-'));
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5)
+  if (filters.flavor.sweetness[0] !== 0 || filters.flavor.sweetness[1] !== 5)
     params.set('sweetness', filters.flavor.sweetness.join('-'));
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5)
+  if (filters.flavor.acidity[0] !== 0 || filters.flavor.acidity[1] !== 5)
     params.set('acidity', filters.flavor.acidity.join('-'));
-  if (filters.body[0] !== 1 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
+  if (filters.body[0] !== 0 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
 
   // 로스팅 선택 상태가 존재할 경우 roastingType으로 URL 파라미터 저장
   if (filters.roasting) {
