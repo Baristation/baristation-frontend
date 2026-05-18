@@ -1,11 +1,11 @@
 'use client';
 import { AnimatePresence, motion, useDragControls } from 'framer-motion';
-import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
+import { Droplets, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { DEFAULT_FILTERS, type FlavorType, type ProductFilterState } from '@/lib/api/products';
 
-import { FlavorFilter, MetricFilter } from './filters/FilterSections';
+import { FlavorFilter, MetricFilter, RoastingFilter } from './filters/FilterSections';
 import ProductSearchBar from './ProductSearchBar';
 
 interface ProductFilterDrawerProps {
@@ -142,7 +142,7 @@ export default function ProductFilterDrawer({
               <div className="space-y-0.5">
                 <div className="border-t border-gray-100">
                   <MetricFilter
-                    label="Acidity"
+                    label="산미"
                     icon={Droplets}
                     value={localFilters.flavor.acidity}
                     onChange={(v) =>
@@ -156,7 +156,7 @@ export default function ProductFilterDrawer({
 
                 <div className="border-t border-gray-100">
                   <MetricFilter
-                    label="Sweetness"
+                    label="감미"
                     icon={Sparkles}
                     value={localFilters.flavor.sweetness}
                     onChange={(v) =>
@@ -170,7 +170,7 @@ export default function ProductFilterDrawer({
 
                 <div className="border-t border-gray-100">
                   <MetricFilter
-                    label="Body"
+                    label="바디감"
                     icon={Layers}
                     value={localFilters.body}
                     onChange={(v) => setLocalFilters({ ...localFilters, body: v })}
@@ -179,7 +179,7 @@ export default function ProductFilterDrawer({
 
                 <div className="border-t border-gray-100">
                   <MetricFilter
-                    label="Balance"
+                    label="밸런스"
                     icon={Scale}
                     value={localFilters.flavor.balance}
                     colorPalette="teal"
@@ -193,11 +193,8 @@ export default function ProductFilterDrawer({
                 </div>
 
                 <div className="border-t border-gray-100">
-                  <MetricFilter
-                    label="Roasting"
-                    icon={Flame}
+                  <RoastingFilter
                     value={localFilters.roasting}
-                    colorPalette="espresso"
                     onChange={(v) =>
                       setLocalFilters({
                         ...localFilters,

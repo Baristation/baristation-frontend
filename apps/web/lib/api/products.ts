@@ -96,20 +96,14 @@ export interface ProductSearchResponse {
 export interface ProductSearchRequest {
   keyword?: string;
   flavorCategory?: string;
-  flavorCategories?: string[];
   minAcidity?: number;
   maxAcidity?: number;
   minSweetness?: number;
   maxSweetness?: number;
-  minBitterness?: number;
-  maxBitterness?: number;
   minBody?: number;
   maxBody?: number;
   minBalance?: number;
   maxBalance?: number;
-  minRoasting?: number;
-  maxRoasting?: number;
-  body?: number;
   roastingType?: string;
   sortBy?: string;
   page?: number;
@@ -237,14 +231,14 @@ export interface ProductFilterState {
     acidity: [number, number];
   };
   body: [number, number];
-  roasting: [number, number];
+  roasting: string | null; // 단일 Enum 값 (LIGHT, MEDIUMLIGHT, MEDIUM, MEDIUMDARK, DARK) 또는 null (all)
 }
 
 export const DEFAULT_FILTERS: ProductFilterState = {
   flavors: [],
   flavor: { balance: [1, 5], sweetness: [1, 5], acidity: [1, 5] },
   body: [1, 5],
-  roasting: [1, 5],
+  roasting: null,
 };
 
 /** FlavorType → Tailwind 배경 클래스 매핑 (구 버전 호환성 유지 혹은 제거 가능) */
@@ -284,8 +278,11 @@ export function encodeFiltersToParams(
   if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5)
     params.set('acidity', filters.flavor.acidity.join('-'));
   if (filters.body[0] !== 1 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
-  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5)
-    params.set('roasting', filters.roasting.join('-'));
+
+  // 로스팅 선택 상태가 존재할 경우 roastingType으로 URL 파라미터 저장
+  if (filters.roasting) {
+    params.set('roastingType', filters.roasting);
+  }
 
   if (searchQuery.trim()) params.set('q', searchQuery.trim());
 
@@ -305,35 +302,23 @@ export function mapFiltersToApiRequest(
   }
 
   if (filters.flavors.length > 0) {
-    // 다중 선택 지원을 위해 배열 전체 전달 (API 사양에 맞춰 선택적 처리 필요)
-    req.flavorCategories = filters.flavors;
-    // 하위 호환성을 위해 첫 번째 항목도 유지
+    // 다중 선택 시 첫 번째 향미를 flavorCategory로 전달
     req.flavorCategory = filters.flavors[0];
   }
 
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5) {
-    req.minAcidity = filters.flavor.acidity[0];
-    req.maxAcidity = filters.flavor.acidity[1];
-  }
+  // 맛 프로필 파라미터 필수화 (null 여부: X) - 항상 기본값 또는 설정된 범위를 포함하여 전송
+  req.minAcidity = filters.flavor.acidity[0];
+  req.maxAcidity = filters.flavor.acidity[1];
+  req.minSweetness = filters.flavor.sweetness[0];
+  req.maxSweetness = filters.flavor.sweetness[1];
+  req.minBody = filters.body[0];
+  req.maxBody = filters.body[1];
+  req.minBalance = filters.flavor.balance[0];
+  req.maxBalance = filters.flavor.balance[1];
 
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5) {
-    req.minSweetness = filters.flavor.sweetness[0];
-    req.maxSweetness = filters.flavor.sweetness[1];
-  }
-
-  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5) {
-    req.minBalance = filters.flavor.balance[0];
-    req.maxBalance = filters.flavor.balance[1];
-  }
-
-  if (filters.body[0] !== 1 || filters.body[1] !== 5) {
-    req.minBody = filters.body[0];
-    req.maxBody = filters.body[1];
-  }
-
-  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5) {
-    req.minRoasting = filters.roasting[0];
-    req.maxRoasting = filters.roasting[1];
+  // 로스팅 선택 상태가 존재할 경우 roastingType 추가
+  if (filters.roasting) {
+    req.roastingType = filters.roasting;
   }
 
   return req;
@@ -349,7 +334,7 @@ export function decodeParamsToFilters(params: URLSearchParams): {
     flavors: [...DEFAULT_FILTERS.flavors],
     flavor: { ...DEFAULT_FILTERS.flavor },
     body: [...DEFAULT_FILTERS.body],
-    roasting: [...DEFAULT_FILTERS.roasting],
+    roasting: DEFAULT_FILTERS.roasting,
   };
 
   const flavorsParam = params.get('flavors');
@@ -376,8 +361,11 @@ export function decodeParamsToFilters(params: URLSearchParams): {
   const body = parseRange(params.get('body'));
   if (body) filters.body = body;
 
-  const roasting = parseRange(params.get('roasting'));
-  if (roasting) filters.roasting = roasting;
+  // URL에서 roastingType 파라미터를 읽어와 디코딩
+  const roastingTypeParam = params.get('roastingType');
+  if (roastingTypeParam) {
+    filters.roasting = roastingTypeParam;
+  }
 
   const searchQuery = params.get('q') || '';
 

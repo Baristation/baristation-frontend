@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Droplets, Flame, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
+import { Droplets, Layers, RotateCcw, Scale, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { DEFAULT_FILTERS, type FlavorType, type ProductFilterState } from '@/lib/api/products';
 
-import { FlavorFilter, MetricFilter, isFiltered } from './filters/FilterSections';
+import { FlavorFilter, MetricFilter, RoastingFilter, isFiltered } from './filters/FilterSections';
 import ProductSearchBar from './ProductSearchBar';
 
 interface ProductFilterPanelProps {
@@ -78,7 +78,7 @@ export default function ProductFilterPanel({
         {/* Metrics Section */}
         <div className="space-y-1 py-3">
           <MetricFilter
-            label="Acidity"
+            label="산미"
             icon={Droplets}
             value={localFilters.flavor.acidity}
             onChange={(v) =>
@@ -90,7 +90,7 @@ export default function ProductFilterPanel({
           />
 
           <MetricFilter
-            label="Sweetness"
+            label="감미"
             icon={Sparkles}
             value={localFilters.flavor.sweetness}
             onChange={(v) =>
@@ -102,14 +102,14 @@ export default function ProductFilterPanel({
           />
 
           <MetricFilter
-            label="Body"
+            label="바디감"
             icon={Layers}
             value={localFilters.body}
             onChange={(v) => setLocalFilters({ ...localFilters, body: v })}
           />
 
           <MetricFilter
-            label="Balance"
+            label="밸런스"
             icon={Scale}
             value={localFilters.flavor.balance}
             colorPalette="teal"
@@ -121,11 +121,8 @@ export default function ProductFilterPanel({
             }
           />
 
-          <MetricFilter
-            label="Roasting"
-            icon={Flame}
+          <RoastingFilter
             value={localFilters.roasting}
-            colorPalette="espresso"
             onChange={(v) => setLocalFilters({ ...localFilters, roasting: v })}
           />
         </div>

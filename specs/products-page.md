@@ -489,47 +489,74 @@ const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
 ---
 
-## 8. API 연동 명세 (초안)
+## 8. API 연동 명세 (최신화)
+
+> **스펙 변경 사유 (Reason / Context)**: 백엔드 API 설계 고도화에 맞춰 원두 검색 API 파라미터 구조를 최신화했습니다. 맛 프로필 8종 파라미터가 필수화되었으며, 기존의 로스팅 범위 필터가 단일 Enum 필터(`roastingType`)로 단일화되었습니다. 응답의 향미 속성은 명세 정정사항에 따라 기존의 `flavorNotes` 명칭을 그대로 유지합니다.
 
 ### 상황
 
-> 상품(원두) 목록 조회 (필터·검색 및 페이지네이션 포함)
+> 필터에 따른 원두 목록 페이지 전송 (검색 및 페이지네이션 포함)
 
 ### Request
 
 ```http
-GET /api/products/search?keyword={keyword}&flavorCategory={category}&minAcidity={1-10}&maxAcidity={1-10}&minSweetness={1-10}&maxSweetness={1-10}&body={1-5}&page={0}&size={12}
+GET /api/products/search?keyword={keyword}&flavorCategory={category}&minAcidity={0-5}&maxAcidity={0-5}&minSweetness={0-5}&maxSweetness={0-5}&minBody={0-5}&maxBody={0-5}&minBalance={0-5}&maxBalance={0-5}&roastingType={roastingType}&sortBy={sortBy}&page={0}&size={12}&sort={sort}
 ```
 
-| Query Parameter  | Type     | Description                            | 필수 |
-| ---------------- | -------- | -------------------------------------- | ---- |
-| `keyword`        | `string` | 원두명 / 생산지 / 로스터명 키워드 검색 | ✗    |
-| `flavorCategory` | `string` | 맛 카테고리 (FRUITY, NUTTY 등 Enum)    | ✗    |
-| `minAcidity`     | `number` | 산미 최소값 (1~10 단위 확장 가능)      | ✗    |
-| `maxAcidity`     | `number` | 산미 최대값 (1~10 단위 확장 가능)      | ✗    |
-| `minSweetness`   | `number` | 단맛 최소값 (1~10 단위 확장 가능)      | ✗    |
-| `maxSweetness`   | `number` | 단맛 최대값 (1~10 단위 확장 가능)      | ✗    |
-| `body`           | `number` | 바디감 1~5                             | ✗    |
-| `roastingType`   | `string` | 로스팅 타입 (LIGHT, MEDIUM 등 Enum)    | ✗    |
-| `page`           | `number` | 페이지 번호 (0부터 시작)               | ✗    |
-| `size`           | `number` | 한 페이지 당 아이템 수 (기본 12)       | ✗    |
-| `sortBy`         | `string` | 정렬 기준 (예: 'id', 'name')           | ✗    |
-| `sort`           | `string` | 정렬 방향 ('asc', 'desc')              | ✗    |
+| Query Parameter  | Type    | Description                            | 필수 여부 | 형식                                                                          |
+| ---------------- | ------- | -------------------------------------- | --------- | ----------------------------------------------------------------------------- |
+| `keyword`        | String  | 원두명 / 생산지 / 로스터명 키워드 검색 | ✗         | -                                                                             |
+| `flavorCategory` | Enum    | 맛 카테고리 (FRUITY, NUTTY, FLORAL 등) | ✗         | `[FlavorCategory]`                                                            |
+| `minAcidity`     | Integer | 산미 최소값 (0~5)                      | ✓         | `0~5`                                                                         |
+| `maxAcidity`     | Integer | 산미 최대값 (0~5)                      | ✓         | `0~5`                                                                         |
+| `minSweetness`   | Integer | 단맛 최소값 (0~5)                      | ✓         | `0~5`                                                                         |
+| `maxSweetness`   | Integer | 단맛 최대값 (0~5)                      | ✓         | `0~5`                                                                         |
+| `minBody`        | Integer | 바디감 최소값 (0~5)                    | ✓         | `0~5`                                                                         |
+| `maxBody`        | Integer | 바디감 최대값 (0~5)                    | ✓         | `0~5`                                                                         |
+| `minBalance`     | Integer | 밸런스 최소값 (0~5)                    | ✓         | `0~5`                                                                         |
+| `maxBalance`     | Integer | 밸런스 최대값 (0~5)                    | ✓         | `0~5`                                                                         |
+| `roastingType`   | Enum    | 로스팅 타입                            | ✗         | `LIGHT`, `MEDIUMLIGHT`, `MEDIUM`, `MEDIUMDARK`, `DARK`                        |
+| `sortBy`         | Enum    | 정렬 기준 (LATEST, NAME, ACIDITY 등)   | ✗         | `LATEST`, `NAME`, `ROASTING_LEVEL`, `ACIDITY`, `SWEETNESS`, `BODY`, `BALANCE` |
+| `page`           | Integer | 페이지 번호 (0부터 시작)               | ✗         | 기본: `0`                                                                     |
+| `size`           | Integer | 페이지 크기                            | ✗         | 기본: `12`                                                                    |
+| `sort`           | String  | 정렬 방식                              | ✗         | 필드명,방향 (기본: `createdAt,desc`)                                          |
 
 ### Response Body
 
-```ts
-interface ProductSearchResponse {
-  statusCode: string;
-  message: string;
-  data: {
-    content: ProductSearchItem[]; // 향미/이미지 정보 포함 상품 리스트
-    totalPages: number;
-    totalElements: number;
-    currentPage: number;
-    size: number;
-    hasNext: boolean;
-    hasPrevious: boolean;
-  };
+```json
+{
+  "statusCode": "200",
+  "message": "OK",
+  "data": {
+    "content": [
+      {
+        "productId": 1,
+        "beanNameKo": "에티오피아 예가체프",
+        "beanNameEn": "Ethiopia Yirgacheffe",
+        "origin": "Ethiopia",
+        "region": "Yirgacheffe",
+        "process": "Washed",
+        "productImage": {
+          "productImageId": 101,
+          "imageType": "THUMB",
+          "imageUrl": "https://example.com/images/bean1.jpg",
+          "sortOrder": 1
+        },
+        "flavorNotes": {
+          "flavorNoteId": 101,
+          "flavorCategory": "CHOCOLATY",
+          "nameKo": "다크초콜릿",
+          "nameEn": "Dark chocolate",
+          "flavorImageUrl": "https://example.com/images/flavor.jpg"
+        }
+      }
+    ],
+    "totalPages": 5,
+    "totalElements": 20,
+    "currentPage": 0,
+    "size": 12,
+    "hasNext": true,
+    "hasPrevious": false
+  }
 }
 ```
