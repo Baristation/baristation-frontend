@@ -185,8 +185,6 @@ export const FLAVOR_DEFINITIONS: FlavorDefinition[] = [
   // { id: 'OTHER', ko: '기타', emoji: '❓' },
 ];
 
-export const FLAVOR_TYPES: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.id);
-
 export type RoastingType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Dark
 export type BodyType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Heavy
 
@@ -245,20 +243,7 @@ export const DEFAULT_FILTERS: ProductFilterState = {
 export const FLAVOR_BG_CLASS: Record<string, string> = {
   FRUITY: 'bg-flavor-fruit',
   CHOCOLATY: 'bg-flavor-chocolate',
-  FLORAL: 'bg-flavor-floral',
-  // ... 필요 시 추가
 };
-
-export const ROASTING_TYPES: RoastingType[] = [1, 2, 3, 4, 5];
-export const BODY_TYPES: BodyType[] = [1, 2, 3, 4, 5];
-
-export function getFlavorById(id: FlavorType) {
-  return FLAVOR_DEFINITIONS.find((def) => def.id === id);
-}
-
-export function getFlavorByKoName(ko: string) {
-  return FLAVOR_DEFINITIONS.find((def) => def.ko === ko);
-}
 
 /** 필터 상태를 URL Query String으로 인코딩 */
 export function encodeFiltersToParams(
