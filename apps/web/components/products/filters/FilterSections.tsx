@@ -93,6 +93,45 @@ export function MetricFilter({
   );
 }
 
+/** 로스팅 단계 정의 상수 */
+export const ROASTING_STAGES = [
+  {
+    id: 'LIGHT',
+    ko: '라이트',
+    en: 'Light',
+    color: '#D4A373',
+    tooltip: '라이트 로스팅 (Soft Blonde/Tan)',
+  },
+  {
+    id: 'MEDIUMLIGHT',
+    ko: '미디엄 라이트',
+    en: 'Medium Light',
+    color: '#A98467',
+    tooltip: '미디엄 라이트 (Warm Amber)',
+  },
+  {
+    id: 'MEDIUM',
+    ko: '미디엄',
+    en: 'Medium',
+    color: '#8C5E3C',
+    tooltip: '미디엄 로스팅 (Classic Brown)',
+  },
+  {
+    id: 'MEDIUMDARK',
+    ko: '미디엄 다크',
+    en: 'Medium Dark',
+    color: '#6F4E37',
+    tooltip: '미디엄 다크 (Rich Espresso)',
+  },
+  {
+    id: 'DARK',
+    ko: '다크',
+    en: 'Dark',
+    color: '#3F2305',
+    tooltip: '다크 로스팅 (Deep Dark Chocolate)',
+  },
+] as const;
+
 /**
  * 로스팅 필터 (5가지 단계 버튼 선택)
  */
@@ -102,45 +141,6 @@ interface RoastingFilterProps {
 }
 
 export function RoastingFilter({ value, onChange }: RoastingFilterProps) {
-  // 로스팅 단계 정의
-  const roastingStages = [
-    {
-      id: 'LIGHT',
-      ko: '라이트',
-      en: 'Light',
-      color: '#D4A373',
-      tooltip: '라이트 로스팅 (Soft Blonde/Tan)',
-    },
-    {
-      id: 'MEDIUMLIGHT',
-      ko: '미디엄 라이트',
-      en: 'Medium Light',
-      color: '#A98467',
-      tooltip: '미디엄 라이트 (Warm Amber)',
-    },
-    {
-      id: 'MEDIUM',
-      ko: '미디엄',
-      en: '미디엄',
-      color: '#8C5E3C',
-      tooltip: '미디엄 로스팅 (Classic Brown)',
-    },
-    {
-      id: 'MEDIUMDARK',
-      ko: '미디엄 다크',
-      en: 'Medium Dark',
-      color: '#6F4E37',
-      tooltip: '미디엄 다크 (Rich Espresso)',
-    },
-    {
-      id: 'DARK',
-      ko: '다크',
-      en: '다크',
-      color: '#3F2305',
-      tooltip: '다크 로스팅 (Deep Dark Chocolate)',
-    },
-  ];
-
   return (
     <div className="py-3">
       <p className="font-outfit mb-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
@@ -149,11 +149,13 @@ export function RoastingFilter({ value, onChange }: RoastingFilterProps) {
       </p>
       <div className="flex items-center gap-2">
         {/* 5가지 단계 버튼 */}
-        {roastingStages.map((stage) => {
+        {ROASTING_STAGES.map((stage) => {
           const active = value === stage.id;
           return (
             <Tooltip key={stage.id} content={stage.tooltip}>
               <motion.button
+                type="button"
+                aria-pressed={active}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onChange(active ? null : stage.id)}

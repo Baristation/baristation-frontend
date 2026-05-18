@@ -157,7 +157,7 @@ interface ProductFilterState {
     acidity: [number, number]; // 산미 범위 [min, max] (1~5)
   };
   body: [number, number]; // 바디감 범위 [min, max] (1~5)
-  roasting: [number, number]; // 로스팅 범위 [min, max] (1~5)
+  roasting: string | null; // 단일 로스팅 Enum 또는 null ('LIGHT' | 'MEDIUMLIGHT' | 'MEDIUM' | 'MEDIUMDARK' | 'DARK')
 }
 
 type FlavorType =
@@ -170,7 +170,7 @@ type FlavorType =
   | '견과'
   | '꽃'
   | '스모크';
-type RoastingType = 1 | 2 | 3 | 4 | 5;
+type RoastingType = 'LIGHT' | 'MEDIUMLIGHT' | 'MEDIUM' | 'MEDIUMDARK' | 'DARK';
 
 interface ProductFilterPanelProps {
   filters: ProductFilterState;
@@ -199,11 +199,13 @@ interface ProductFilterPanelProps {
 
 1. **Search** 구역: 패널 최상단에 `ProductSearchBar`를 포함하여 이름/원산지 검색 연동
 2. **Flavor (향)** 섹션: 17개 아로마 카테고리를 Chip 형태로 나열, 다중 선택 가능
-3. **맛 및 프로파일** 섹션: **산미·단맛·밸런스·바디감·로스팅**을 `RangeSlider`를 이용해 범위(Range) 필터링 가능하게 구현
-4. **RangeSlider UI**: 슬라이더 핸들을 조절하여 최소/최대값을 설정하며, 핸들 상단에 현재 값을 나타내는 `Tooltip`을 노출한다
+3. **맛 및 프로파일** 섹션: **산미·단맛·밸런스·바디감**은 `RangeSlider`를 이용해 범위(Range) 필터링하고, **로스팅**은 프리미엄 원형 버튼을 활용해 단일 단계별 필터링이 가능하게 구현
+4. **RangeSlider & Roasting UI**:
+   - 맛 및 프로파일 슬라이더: 핸들을 조절하여 최소/최대값을 설정하며, 핸들 상단에 현재 값을 나타내는 `Tooltip`을 노출한다.
+   - 로스팅 버튼: 5단계 로스팅 강도(LIGHT, MEDIUMLIGHT, MEDIUM, MEDIUMDARK, DARK)에 매칭되는 감성적인 커피 색상 단추들을 제공하며, 호버 시 툴팁을 제공하고 선택 시 단색 링 외곽선 강조 효과를 부여한다. 중복 클릭 시 선택이 토글식으로 해제(전체)된다.
 5. 모든 필터링 조작은 즉시 반영되지 않고 `localFilters` 상태만 갱신한다
 6. 하단에 스티키(Sticky)하게 자리잡은 "적용하기" 버튼을 클릭할 때 `onChange(localFilters)`를 호출하여 상위 컨텍스트에 반영한다
-7. 하나 이상의 필터가 기본값([1, 5])을 벗어나면 상단에 "초기화" 버튼이 노출된다
+7. 하나 이상의 필터가 기본 상태(기본 범위 외 혹은 로스팅 선택 시)를 벗어나면 상단에 "초기화" 버튼이 노출된다
 8. 초기화 버튼 클릭 시 `onReset()`을 호출하여 모든 필터를 해제한다
 
 #### 6. Design Spec (디자인 명세)
@@ -211,7 +213,7 @@ interface ProductFilterPanelProps {
 - **Layout**: `w-[240px] shrink-0`, 수직 스크롤 가능, 섹션 간 `pb-6 border-b border-gray-100`
 - **Flavor Chip**: `rounded-full px-3 py-1 text-xs`, 선택 시 `bg-amber-500 text-white font-semibold shadow-sm`, 미선택 시 `bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300`
 - **Rating Bar**: 마디별 테두리 적용(`border border-gray-200/50`), 값이 높을수록 진한 색상(`amber-200`~`amber-600`), 미선택 마디는 `bg-gray-50`
-- **Roasting Chip**: Flavor Chip과 동일 스타일
+- **Roasting Filter UI**: 5가지 로스팅 단계별 원형 테마 단추 제공 (Light: `#D4A373`, Medium Light: `#A98467`, Medium: `#8C5E3C`, Medium Dark: `#6F4E37`, Dark: `#3F2305`). 활성화 시 white border + amber-500 2px ring 강조. 웹 접근성 표준(`type="button"`, `aria-pressed`) 준수.
 - **Typography**: 섹션 타이틀 `Outfit SemiBold text-xs uppercase tracking-widest text-gray-500`, 바디감 수치 텍스트는 타이틀과 동일 선상 우측 배치
 - **Apply Button**: 패널 최하단에 스티키(`sticky bottom-0`)하게 배치되며 `w-full rounded-xl bg-amber-500 py-3 text-sm font-semibold text-white` 속성 적용
 - **Animation** (`framer-motion`): Chip 선택 시 `scale: 0.95 → 1.0` 0.1s 튕김 효과
@@ -221,7 +223,7 @@ interface ProductFilterPanelProps {
 - [ ] (기능) Flavor Chip 다중 선택 및 해제가 정상 동작한다
 - [ ] (기능) Flavor Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
 - [ ] (기능) Body Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
-- [ ] (기능) Roasting Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
+- [ ] (기능) Roasting 필터가 LIGHT, MEDIUMLIGHT, MEDIUM, MEDIUMDARK, DARK 5단계 버튼 선택을 처리하며 선택한 단일 Enum이 상위로 전송된다
 - [ ] (기능) 초기화 버튼 클릭 시 모든 필터가 해제된다
 - [ ] (기능) "적용하기" 버튼 클릭 시에만 필터 변경 사항이 부모로 전달된다
 - [ ] (디자인) "적용하기" 버튼이 스크롤 시에도 패널 최하단에 스티키하게 고정된다

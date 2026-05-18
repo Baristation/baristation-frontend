@@ -239,11 +239,57 @@ export const DEFAULT_FILTERS: ProductFilterState = {
   roasting: null,
 };
 
-/** FlavorType → Tailwind 배경 클래스 매핑 (구 버전 호환성 유지 혹은 제거 가능) */
 export const FLAVOR_BG_CLASS: Record<string, string> = {
   FRUITY: 'bg-flavor-fruit',
   CHOCOLATY: 'bg-flavor-chocolate',
 };
+
+export const VALID_ROASTING_TYPES = [
+  'LIGHT',
+  'MEDIUMLIGHT',
+  'MEDIUM',
+  'MEDIUMDARK',
+  'DARK',
+] as const;
+export type RoastingFilterValue = (typeof VALID_ROASTING_TYPES)[number];
+
+/** 로스팅 타입이 유효한지 검증하는 타입 가드 */
+export function isValidRoastingType(val: any): val is RoastingFilterValue {
+  return VALID_ROASTING_TYPES.includes(val);
+}
+
+/** 수치 지표 범위를 정제하고 검증하는 헬퍼 함수 */
+export function sanitizeRange(
+  range: any,
+  minDefault: number = 1,
+  maxDefault: number = 5,
+  domainMin: number = 0,
+  domainMax: number = 5,
+): [number, number] {
+  if (!Array.isArray(range) || range.length !== 2) {
+    return [minDefault, maxDefault];
+  }
+
+  let min = Number(range[0]);
+  let max = Number(range[1]);
+
+  // NaN 또는 유한하지 않은 값 처리
+  if (!Number.isFinite(min)) min = minDefault;
+  if (!Number.isFinite(max)) max = maxDefault;
+
+  // 도메인 범위로 제한 (Clamping)
+  min = Math.max(domainMin, Math.min(domainMax, min));
+  max = Math.max(domainMin, Math.min(domainMax, max));
+
+  // 하한값이 상한값보다 큰 경우 스왑
+  if (min > max) {
+    const temp = min;
+    min = max;
+    max = temp;
+  }
+
+  return [min, max];
+}
 
 /** 필터 상태를 URL Query String으로 인코딩 */
 export function encodeFiltersToParams(
@@ -291,18 +337,25 @@ export function mapFiltersToApiRequest(
     req.flavorCategory = filters.flavors[0];
   }
 
-  // 맛 프로필 파라미터 필수화 (null 여부: X) - 항상 기본값 또는 설정된 범위를 포함하여 전송
-  req.minAcidity = filters.flavor.acidity[0];
-  req.maxAcidity = filters.flavor.acidity[1];
-  req.minSweetness = filters.flavor.sweetness[0];
-  req.maxSweetness = filters.flavor.sweetness[1];
-  req.minBody = filters.body[0];
-  req.maxBody = filters.body[1];
-  req.minBalance = filters.flavor.balance[0];
-  req.maxBalance = filters.flavor.balance[1];
+  // 맛 프로필 파라미터 필수화 (null 여부: X) - 항상 기본값 또는 설정된 범위를 포함하여 전송 (살균 처리)
+  const [minAcidity, maxAcidity] = sanitizeRange(filters.flavor.acidity);
+  req.minAcidity = minAcidity;
+  req.maxAcidity = maxAcidity;
 
-  // 로스팅 선택 상태가 존재할 경우 roastingType 추가
-  if (filters.roasting) {
+  const [minSweetness, maxSweetness] = sanitizeRange(filters.flavor.sweetness);
+  req.minSweetness = minSweetness;
+  req.maxSweetness = maxSweetness;
+
+  const [minBody, maxBody] = sanitizeRange(filters.body);
+  req.minBody = minBody;
+  req.maxBody = maxBody;
+
+  const [minBalance, maxBalance] = sanitizeRange(filters.flavor.balance);
+  req.minBalance = minBalance;
+  req.maxBalance = maxBalance;
+
+  // 로스팅 선택 상태가 존재하고 Whitelist에 포함된 경우 roastingType 추가
+  if (filters.roasting && isValidRoastingType(filters.roasting)) {
     req.roastingType = filters.roasting;
   }
 
@@ -339,16 +392,16 @@ export function decodeParamsToFilters(params: URLSearchParams): {
   const b = parseRange(params.get('balance'));
   const s = parseRange(params.get('sweetness'));
   const a = parseRange(params.get('acidity'));
-  if (b) filters.flavor.balance = b;
-  if (s) filters.flavor.sweetness = s;
-  if (a) filters.flavor.acidity = a;
+  if (b) filters.flavor.balance = sanitizeRange(b);
+  if (s) filters.flavor.sweetness = sanitizeRange(s);
+  if (a) filters.flavor.acidity = sanitizeRange(a);
 
   const body = parseRange(params.get('body'));
-  if (body) filters.body = body;
+  if (body) filters.body = sanitizeRange(body);
 
-  // URL에서 roastingType 파라미터를 읽어와 디코딩
+  // URL에서 roastingType 파라미터를 읽어와 유효한지 검증 후 디코딩
   const roastingTypeParam = params.get('roastingType');
-  if (roastingTypeParam) {
+  if (roastingTypeParam && isValidRoastingType(roastingTypeParam)) {
     filters.roasting = roastingTypeParam;
   }
 
