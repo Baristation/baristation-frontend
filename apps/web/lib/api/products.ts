@@ -46,6 +46,7 @@ export interface ProductDetailDTO {
   body: number | null;
   balance: number | null;
   images: ProductImageDTO[];
+  productUrl?: string | null;
 }
 
 export interface ProductDetailResponse {
@@ -96,20 +97,14 @@ export interface ProductSearchResponse {
 export interface ProductSearchRequest {
   keyword?: string;
   flavorCategory?: string;
-  flavorCategories?: string[];
   minAcidity?: number;
   maxAcidity?: number;
   minSweetness?: number;
   maxSweetness?: number;
-  minBitterness?: number;
-  maxBitterness?: number;
   minBody?: number;
   maxBody?: number;
   minBalance?: number;
   maxBalance?: number;
-  minRoasting?: number;
-  maxRoasting?: number;
-  body?: number;
   roastingType?: string;
   sortBy?: string;
   page?: number;
@@ -188,10 +183,14 @@ export const FLAVOR_DEFINITIONS: FlavorDefinition[] = [
   { id: 'SAVORY', ko: '감칠맛', emoji: '🧂' },
   // { id: 'MOUTHFEEL', ko: '바디감', emoji: '🥛' },
   // { id: 'DEFECT', ko: '결함', emoji: '⚠️' },
-  // { id: 'OTHER', ko: '기타', emoji: '❓' },
 ];
 
-export const FLAVOR_TYPES: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.id);
+export const VALID_FLAVORS: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.id);
+
+/** 향미 타입이 유효한지 검증하는 타입 가드 */
+export function isValidFlavor(val: any): val is FlavorType {
+  return VALID_FLAVORS.includes(val);
+}
 
 export type RoastingType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Dark
 export type BodyType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Heavy
@@ -230,40 +229,73 @@ export interface ProductInfo {
 }
 
 export interface ProductFilterState {
-  flavors: FlavorType[];
+  flavorCategory: FlavorType | null;
   flavor: {
     balance: [number, number];
     sweetness: [number, number];
     acidity: [number, number];
   };
   body: [number, number];
-  roasting: [number, number];
+  roasting: string | null; // 단일 Enum 값 (LIGHT, MEDIUMLIGHT, MEDIUM, MEDIUMDARK, DARK) 또는 null (all)
 }
 
 export const DEFAULT_FILTERS: ProductFilterState = {
-  flavors: [],
-  flavor: { balance: [1, 5], sweetness: [1, 5], acidity: [1, 5] },
-  body: [1, 5],
-  roasting: [1, 5],
+  flavorCategory: null,
+  flavor: { balance: [0, 5], sweetness: [0, 5], acidity: [0, 5] },
+  body: [0, 5],
+  roasting: null,
 };
 
-/** FlavorType → Tailwind 배경 클래스 매핑 (구 버전 호환성 유지 혹은 제거 가능) */
 export const FLAVOR_BG_CLASS: Record<string, string> = {
   FRUITY: 'bg-flavor-fruit',
   CHOCOLATY: 'bg-flavor-chocolate',
-  FLORAL: 'bg-flavor-floral',
-  // ... 필요 시 추가
 };
 
-export const ROASTING_TYPES: RoastingType[] = [1, 2, 3, 4, 5];
-export const BODY_TYPES: BodyType[] = [1, 2, 3, 4, 5];
+export const VALID_ROASTING_TYPES = [
+  'LIGHT',
+  'MEDIUMLIGHT',
+  'MEDIUM',
+  'MEDIUMDARK',
+  'DARK',
+] as const;
+export type RoastingFilterValue = (typeof VALID_ROASTING_TYPES)[number];
 
-export function getFlavorById(id: FlavorType) {
-  return FLAVOR_DEFINITIONS.find((def) => def.id === id);
+/** 로스팅 타입이 유효한지 검증하는 타입 가드 */
+export function isValidRoastingType(val: any): val is RoastingFilterValue {
+  return VALID_ROASTING_TYPES.includes(val);
 }
 
-export function getFlavorByKoName(ko: string) {
-  return FLAVOR_DEFINITIONS.find((def) => def.ko === ko);
+/** 수치 지표 범위를 정제하고 검증하는 헬퍼 함수 */
+export function sanitizeRange(
+  range: any,
+  minDefault: number = 0,
+  maxDefault: number = 5,
+  domainMin: number = 0,
+  domainMax: number = 5,
+): [number, number] {
+  if (!Array.isArray(range) || range.length !== 2) {
+    return [minDefault, maxDefault];
+  }
+
+  let min = Number(range[0]);
+  let max = Number(range[1]);
+
+  // NaN 또는 유한하지 않은 값 처리
+  if (!Number.isFinite(min)) min = minDefault;
+  if (!Number.isFinite(max)) max = maxDefault;
+
+  // 도메인 범위로 제한 (Clamping)
+  min = Math.max(domainMin, Math.min(domainMax, min));
+  max = Math.max(domainMin, Math.min(domainMax, max));
+
+  // 하한값이 상한값보다 큰 경우 스왑
+  if (min > max) {
+    const temp = min;
+    min = max;
+    max = temp;
+  }
+
+  return [min, max];
 }
 
 /** 필터 상태를 URL Query String으로 인코딩 */
@@ -273,19 +305,22 @@ export function encodeFiltersToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.flavors.length > 0) {
-    params.set('flavors', filters.flavors.join(','));
+  if (filters.flavorCategory && isValidFlavor(filters.flavorCategory)) {
+    params.set('flavorCategory', filters.flavorCategory);
   }
 
-  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5)
+  if (filters.flavor.balance[0] !== 0 || filters.flavor.balance[1] !== 5)
     params.set('balance', filters.flavor.balance.join('-'));
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5)
+  if (filters.flavor.sweetness[0] !== 0 || filters.flavor.sweetness[1] !== 5)
     params.set('sweetness', filters.flavor.sweetness.join('-'));
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5)
+  if (filters.flavor.acidity[0] !== 0 || filters.flavor.acidity[1] !== 5)
     params.set('acidity', filters.flavor.acidity.join('-'));
-  if (filters.body[0] !== 1 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
-  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5)
-    params.set('roasting', filters.roasting.join('-'));
+  if (filters.body[0] !== 0 || filters.body[1] !== 5) params.set('body', filters.body.join('-'));
+
+  // 로스팅 선택 상태가 존재할 경우 roastingType으로 URL 파라미터 저장
+  if (filters.roasting) {
+    params.set('roastingType', filters.roasting);
+  }
 
   if (searchQuery.trim()) params.set('q', searchQuery.trim());
 
@@ -304,36 +339,30 @@ export function mapFiltersToApiRequest(
     req.keyword = searchQuery.trim();
   }
 
-  if (filters.flavors.length > 0) {
-    // 다중 선택 지원을 위해 배열 전체 전달 (API 사양에 맞춰 선택적 처리 필요)
-    req.flavorCategories = filters.flavors;
-    // 하위 호환성을 위해 첫 번째 항목도 유지
-    req.flavorCategory = filters.flavors[0];
+  if (filters.flavorCategory && isValidFlavor(filters.flavorCategory)) {
+    req.flavorCategory = filters.flavorCategory;
   }
 
-  if (filters.flavor.acidity[0] !== 1 || filters.flavor.acidity[1] !== 5) {
-    req.minAcidity = filters.flavor.acidity[0];
-    req.maxAcidity = filters.flavor.acidity[1];
-  }
+  // 맛 프로필 파라미터 필수화 (null 여부: X) - 항상 기본값 또는 설정된 범위를 포함하여 전송 (살균 처리)
+  const [minAcidity, maxAcidity] = sanitizeRange(filters.flavor.acidity);
+  req.minAcidity = minAcidity;
+  req.maxAcidity = maxAcidity;
 
-  if (filters.flavor.sweetness[0] !== 1 || filters.flavor.sweetness[1] !== 5) {
-    req.minSweetness = filters.flavor.sweetness[0];
-    req.maxSweetness = filters.flavor.sweetness[1];
-  }
+  const [minSweetness, maxSweetness] = sanitizeRange(filters.flavor.sweetness);
+  req.minSweetness = minSweetness;
+  req.maxSweetness = maxSweetness;
 
-  if (filters.flavor.balance[0] !== 1 || filters.flavor.balance[1] !== 5) {
-    req.minBalance = filters.flavor.balance[0];
-    req.maxBalance = filters.flavor.balance[1];
-  }
+  const [minBody, maxBody] = sanitizeRange(filters.body);
+  req.minBody = minBody;
+  req.maxBody = maxBody;
 
-  if (filters.body[0] !== 1 || filters.body[1] !== 5) {
-    req.minBody = filters.body[0];
-    req.maxBody = filters.body[1];
-  }
+  const [minBalance, maxBalance] = sanitizeRange(filters.flavor.balance);
+  req.minBalance = minBalance;
+  req.maxBalance = maxBalance;
 
-  if (filters.roasting[0] !== 1 || filters.roasting[1] !== 5) {
-    req.minRoasting = filters.roasting[0];
-    req.maxRoasting = filters.roasting[1];
+  // 로스팅 선택 상태가 존재하고 Whitelist에 포함된 경우 roastingType 추가
+  if (filters.roasting && isValidRoastingType(filters.roasting)) {
+    req.roastingType = filters.roasting;
   }
 
   return req;
@@ -346,15 +375,18 @@ export function decodeParamsToFilters(params: URLSearchParams): {
 } {
   const filters: ProductFilterState = {
     ...DEFAULT_FILTERS,
-    flavors: [...DEFAULT_FILTERS.flavors],
+    flavorCategory: DEFAULT_FILTERS.flavorCategory,
     flavor: { ...DEFAULT_FILTERS.flavor },
     body: [...DEFAULT_FILTERS.body],
-    roasting: [...DEFAULT_FILTERS.roasting],
+    roasting: DEFAULT_FILTERS.roasting,
   };
 
-  const flavorsParam = params.get('flavors');
-  if (flavorsParam) {
-    filters.flavors = flavorsParam.split(',') as FlavorType[];
+  const flavorCategoryParam = params.get('flavorCategory') || params.get('flavors');
+  if (flavorCategoryParam) {
+    const firstFlavor = flavorCategoryParam.split(',')[0];
+    if (isValidFlavor(firstFlavor)) {
+      filters.flavorCategory = firstFlavor;
+    }
   }
 
   const parseRange = (val: string | null): [number, number] | null => {
@@ -369,15 +401,18 @@ export function decodeParamsToFilters(params: URLSearchParams): {
   const b = parseRange(params.get('balance'));
   const s = parseRange(params.get('sweetness'));
   const a = parseRange(params.get('acidity'));
-  if (b) filters.flavor.balance = b;
-  if (s) filters.flavor.sweetness = s;
-  if (a) filters.flavor.acidity = a;
+  if (b) filters.flavor.balance = sanitizeRange(b);
+  if (s) filters.flavor.sweetness = sanitizeRange(s);
+  if (a) filters.flavor.acidity = sanitizeRange(a);
 
   const body = parseRange(params.get('body'));
-  if (body) filters.body = body;
+  if (body) filters.body = sanitizeRange(body);
 
-  const roasting = parseRange(params.get('roasting'));
-  if (roasting) filters.roasting = roasting;
+  // URL에서 roastingType 파라미터를 읽어와 유효한지 검증 후 디코딩
+  const roastingTypeParam = params.get('roastingType');
+  if (roastingTypeParam && isValidRoastingType(roastingTypeParam)) {
+    filters.roasting = roastingTypeParam;
+  }
 
   const searchQuery = params.get('q') || '';
 
