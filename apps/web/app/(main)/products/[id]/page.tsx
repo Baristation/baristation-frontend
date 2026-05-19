@@ -80,6 +80,7 @@ export default async function ProductDetailPage({ params }: Props) {
         agtronMax={product.agtronMax}
         additionalImages={product.images}
         flavorNotes={product.flavorNotes}
+        productUrl={product.productUrl}
       />
       <ProductInfoTable beanSummary={product.beanSummary} description={product.description} />
       <FlavorProfileSection

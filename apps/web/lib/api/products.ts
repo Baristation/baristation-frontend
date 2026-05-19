@@ -46,6 +46,7 @@ export interface ProductDetailDTO {
   body: number | null;
   balance: number | null;
   images: ProductImageDTO[];
+  productUrl?: string | null;
 }
 
 export interface ProductDetailResponse {
