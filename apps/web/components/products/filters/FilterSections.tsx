@@ -28,6 +28,9 @@ export function FlavorFilter({ selectedFlavor, onToggle }: FlavorFilterProps) {
           return (
             <Tooltip key={def.id} content={def.ko}>
               <motion.button
+                type="button"
+                aria-pressed={active}
+                aria-label={def.ko}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onToggle(def.id)}

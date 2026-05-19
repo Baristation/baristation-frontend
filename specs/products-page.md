@@ -150,7 +150,7 @@ interface ProductSearchBarProps {
 
 ```ts
 interface ProductFilterState {
-  flavors: FlavorType[]; // 선택된 아로마 (다중 선택)
+  flavorCategory: FlavorType | null; // 선택된 아로마 (단일 선택)
   flavor: {
     balance: [number, number]; // 밸런스 범위 [min, max] (0~5)
     sweetness: [number, number]; // 단맛 범위 [min, max] (0~5)
@@ -198,7 +198,7 @@ interface ProductFilterPanelProps {
 #### 5. Functional Requirements (단계별 요구사항)
 
 1. **Search** 구역: 패널 최상단에 `ProductSearchBar`를 포함하여 이름/원산지 검색 연동
-2. **Flavor (향)** 섹션: 17개 아로마 카테고리를 Chip 형태로 나열, 다중 선택 가능
+2. **Flavor (향)** 섹션: 10개 아로마 카테고리를 Chip 형태로 나열, 단일 선택 가능 (중복 클릭 시 토글식 해제)
 3. **맛 및 프로파일** 섹션: **산미·단맛·밸런스·바디감**은 `RangeSlider`를 이용해 범위(Range) 필터링하고, **로스팅**은 프리미엄 원형 버튼을 활용해 단일 단계별 필터링이 가능하게 구현
 4. **RangeSlider & Roasting UI**:
    - 맛 및 프로파일 슬라이더: 핸들을 조절하여 최소/최대값을 설정하며, 핸들 상단에 현재 값을 나타내는 `Tooltip`을 노출한다.
@@ -220,7 +220,7 @@ interface ProductFilterPanelProps {
 
 #### 7. Definition of Done (검증 기준)
 
-- [ ] (기능) Flavor Chip 다중 선택 및 해제가 정상 동작한다
+- [ ] (기능) Flavor Chip 단일 선택 및 해제가 정상 동작한다
 - [ ] (기능) Flavor Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
 - [ ] (기능) Body Rating Bar가 1~5 단계 선택을 처리하며 점차 진한 색으로 표기된다
 - [ ] (기능) Roasting 필터가 LIGHT, MEDIUMLIGHT, MEDIUM, MEDIUMDARK, DARK 5단계 버튼 선택을 처리하며 선택한 단일 Enum이 상위로 전송된다

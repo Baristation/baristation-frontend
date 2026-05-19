@@ -182,8 +182,14 @@ export const FLAVOR_DEFINITIONS: FlavorDefinition[] = [
   { id: 'SAVORY', ko: '감칠맛', emoji: '🧂' },
   // { id: 'MOUTHFEEL', ko: '바디감', emoji: '🥛' },
   // { id: 'DEFECT', ko: '결함', emoji: '⚠️' },
-  // { id: 'OTHER', ko: '기타', emoji: '❓' },
 ];
+
+export const VALID_FLAVORS: FlavorType[] = FLAVOR_DEFINITIONS.map((def) => def.id);
+
+/** 향미 타입이 유효한지 검증하는 타입 가드 */
+export function isValidFlavor(val: any): val is FlavorType {
+  return VALID_FLAVORS.includes(val);
+}
 
 export type RoastingType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Dark
 export type BodyType = 1 | 2 | 3 | 4 | 5; // 1: Light, 5: Heavy
@@ -298,7 +304,7 @@ export function encodeFiltersToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.flavorCategory) {
+  if (filters.flavorCategory && isValidFlavor(filters.flavorCategory)) {
     params.set('flavorCategory', filters.flavorCategory);
   }
 
@@ -332,7 +338,7 @@ export function mapFiltersToApiRequest(
     req.keyword = searchQuery.trim();
   }
 
-  if (filters.flavorCategory) {
+  if (filters.flavorCategory && isValidFlavor(filters.flavorCategory)) {
     req.flavorCategory = filters.flavorCategory;
   }
 
@@ -376,7 +382,10 @@ export function decodeParamsToFilters(params: URLSearchParams): {
 
   const flavorCategoryParam = params.get('flavorCategory') || params.get('flavors');
   if (flavorCategoryParam) {
-    filters.flavorCategory = flavorCategoryParam.split(',')[0] as FlavorType;
+    const firstFlavor = flavorCategoryParam.split(',')[0];
+    if (isValidFlavor(firstFlavor)) {
+      filters.flavorCategory = firstFlavor;
+    }
   }
 
   const parseRange = (val: string | null): [number, number] | null => {
