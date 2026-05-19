@@ -75,22 +75,24 @@ export function MetricFilter({
   onChange,
 }: MetricFilterProps) {
   return (
-    <div className="py-3">
-      <p className="font-outfit mb-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+    <div className="py-2.5">
+      <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
         <Icon className="h-3 w-3" />
         {label}
       </p>
-      <RangeSlider
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        colorPalette={colorPalette}
-        onValueChange={(v) => onChange([v[0], v[1]])}
-      />
-      <div className="mt-1.5 flex justify-between px-0.5 text-[10px] font-medium text-gray-400">
-        <span>{value[0]}</span>
-        <span>{value[1]}</span>
+      <div className="flex items-center gap-3">
+        <span className="w-3 text-center text-[10px] font-medium text-gray-400">{value[0]}</span>
+        <div className="flex-1">
+          <RangeSlider
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            colorPalette={colorPalette}
+            onValueChange={(v) => onChange([v[0], v[1]])}
+          />
+        </div>
+        <span className="w-3 text-center text-[10px] font-medium text-gray-400">{value[1]}</span>
       </div>
     </div>
   );

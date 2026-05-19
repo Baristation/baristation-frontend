@@ -40,10 +40,7 @@ const RangeSlider = React.forwardRef<
   return (
     <SliderPrimitive.Root
       ref={ref}
-      className={cn(
-        'relative mx-auto flex w-[calc(100%-20px)] touch-none select-none items-center py-2',
-        className,
-      )}
+      className={cn('relative flex w-full touch-none select-none items-center py-2', className)}
       {...props}
     >
       <SliderPrimitive.Track
