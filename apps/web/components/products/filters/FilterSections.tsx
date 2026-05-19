@@ -14,17 +14,17 @@ export const SECTION_TITLE =
  * 향미 선택 섹션
  */
 interface FlavorFilterProps {
-  selectedFlavors: FlavorType[];
+  selectedFlavor: FlavorType | null;
   onToggle: (flavor: FlavorType) => void;
 }
 
-export function FlavorFilter({ selectedFlavors, onToggle }: FlavorFilterProps) {
+export function FlavorFilter({ selectedFlavor, onToggle }: FlavorFilterProps) {
   return (
     <div className="py-2">
       <p className={SECTION_TITLE}>향미</p>
       <div className="grid grid-cols-5 gap-2 md:grid-cols-4">
         {FLAVOR_DEFINITIONS.map((def) => {
-          const active = selectedFlavors.includes(def.id);
+          const active = selectedFlavor === def.id;
           return (
             <Tooltip key={def.id} content={def.ko}>
               <motion.button
@@ -179,7 +179,7 @@ export function RoastingFilter({ value, onChange }: RoastingFilterProps) {
  * 필터 적용 여부 확인 유틸리티
  */
 export const isFiltered = (filters: ProductFilterState) =>
-  filters.flavors.length > 0 ||
+  filters.flavorCategory !== null ||
   filters.flavor.balance[0] !== 0 ||
   filters.flavor.balance[1] !== 5 ||
   filters.flavor.sweetness[0] !== 0 ||

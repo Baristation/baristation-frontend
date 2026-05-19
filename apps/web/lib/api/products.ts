@@ -222,7 +222,7 @@ export interface ProductInfo {
 }
 
 export interface ProductFilterState {
-  flavors: FlavorType[];
+  flavorCategory: FlavorType | null;
   flavor: {
     balance: [number, number];
     sweetness: [number, number];
@@ -233,7 +233,7 @@ export interface ProductFilterState {
 }
 
 export const DEFAULT_FILTERS: ProductFilterState = {
-  flavors: [],
+  flavorCategory: null,
   flavor: { balance: [0, 5], sweetness: [0, 5], acidity: [0, 5] },
   body: [0, 5],
   roasting: null,
@@ -298,8 +298,8 @@ export function encodeFiltersToParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.flavors.length > 0) {
-    params.set('flavors', filters.flavors.join(','));
+  if (filters.flavorCategory) {
+    params.set('flavorCategory', filters.flavorCategory);
   }
 
   if (filters.flavor.balance[0] !== 0 || filters.flavor.balance[1] !== 5)
@@ -332,9 +332,8 @@ export function mapFiltersToApiRequest(
     req.keyword = searchQuery.trim();
   }
 
-  if (filters.flavors.length > 0) {
-    // 다중 선택 시 첫 번째 향미를 flavorCategory로 전달
-    req.flavorCategory = filters.flavors[0];
+  if (filters.flavorCategory) {
+    req.flavorCategory = filters.flavorCategory;
   }
 
   // 맛 프로필 파라미터 필수화 (null 여부: X) - 항상 기본값 또는 설정된 범위를 포함하여 전송 (살균 처리)
@@ -369,15 +368,15 @@ export function decodeParamsToFilters(params: URLSearchParams): {
 } {
   const filters: ProductFilterState = {
     ...DEFAULT_FILTERS,
-    flavors: [...DEFAULT_FILTERS.flavors],
+    flavorCategory: DEFAULT_FILTERS.flavorCategory,
     flavor: { ...DEFAULT_FILTERS.flavor },
     body: [...DEFAULT_FILTERS.body],
     roasting: DEFAULT_FILTERS.roasting,
   };
 
-  const flavorsParam = params.get('flavors');
-  if (flavorsParam) {
-    filters.flavors = flavorsParam.split(',') as FlavorType[];
+  const flavorCategoryParam = params.get('flavorCategory') || params.get('flavors');
+  if (flavorCategoryParam) {
+    filters.flavorCategory = flavorCategoryParam.split(',')[0] as FlavorType;
   }
 
   const parseRange = (val: string | null): [number, number] | null => {

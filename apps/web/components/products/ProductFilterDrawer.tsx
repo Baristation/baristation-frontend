@@ -47,10 +47,10 @@ export default function ProductFilterDrawer({
   }, [isOpen]);
 
   const toggleFlavor = (flavor: FlavorType) => {
-    const next = localFilters.flavors.includes(flavor)
-      ? localFilters.flavors.filter((a) => a !== flavor)
-      : [...localFilters.flavors, flavor];
-    setLocalFilters({ ...localFilters, flavors: next });
+    setLocalFilters({
+      ...localFilters,
+      flavorCategory: localFilters.flavorCategory === flavor ? null : flavor,
+    });
   };
 
   const handleApply = () => {
@@ -135,7 +135,10 @@ export default function ProductFilterDrawer({
 
               {/* Flavor */}
               <div className="border-t border-gray-100 py-4">
-                <FlavorFilter selectedFlavors={localFilters.flavors} onToggle={toggleFlavor} />
+                <FlavorFilter
+                  selectedFlavor={localFilters.flavorCategory}
+                  onToggle={toggleFlavor}
+                />
               </div>
 
               {/* Metric Sections (Ungrouped) */}

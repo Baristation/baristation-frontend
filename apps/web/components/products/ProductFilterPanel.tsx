@@ -33,10 +33,10 @@ export default function ProductFilterPanel({
   const filtered = isFiltered(localFilters);
 
   const toggleFlavor = (flavor: FlavorType) => {
-    const next = localFilters.flavors.includes(flavor)
-      ? localFilters.flavors.filter((a) => a !== flavor)
-      : [...localFilters.flavors, flavor];
-    setLocalFilters({ ...localFilters, flavors: next });
+    setLocalFilters({
+      ...localFilters,
+      flavorCategory: localFilters.flavorCategory === flavor ? null : flavor,
+    });
   };
 
   const handleApply = () => {
@@ -72,7 +72,7 @@ export default function ProductFilterPanel({
 
         {/* Flavor */}
         <div className="border-b border-gray-100 pb-4">
-          <FlavorFilter selectedFlavors={localFilters.flavors} onToggle={toggleFlavor} />
+          <FlavorFilter selectedFlavor={localFilters.flavorCategory} onToggle={toggleFlavor} />
         </div>
 
         {/* Metrics Section */}
