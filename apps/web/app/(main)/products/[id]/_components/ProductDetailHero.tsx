@@ -23,6 +23,7 @@ interface ProductDetailHeroProps {
   agtronMax: number | null;
   additionalImages: ProductImageDTO[];
   flavorNotes: FlavorNoteDTO[];
+  productUrl?: string | null;
 }
 
 export function ProductDetailHero({
@@ -32,6 +33,7 @@ export function ProductDetailHero({
   agtronMax,
   additionalImages,
   flavorNotes,
+  productUrl,
 }: ProductDetailHeroProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -56,14 +58,16 @@ export function ProductDetailHero({
     }
   };
 
-  const sanitizedUrl = getSanitizedUrl(roaster.homepageUrl);
+  const sanitizedRoasterUrl = getSanitizedUrl(roaster.homepageUrl);
+  const sanitizedProductUrl = getSanitizedUrl(productUrl || null);
 
   const handlePurchaseClick = () => {
-    if (!sanitizedUrl) {
+    const targetUrl = sanitizedProductUrl || sanitizedRoasterUrl;
+    if (!targetUrl) {
       alert('구매처 링크가 유효하지 않거나 준비 중입니다.');
       return;
     }
-    window.open(sanitizedUrl, '_blank', 'noopener,noreferrer');
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -169,9 +173,9 @@ export function ProductDetailHero({
                 <span className="font-outfit text-xs font-semibold tracking-widest text-amber-600 uppercase">
                   {roaster.nameKo}
                 </span>
-                {sanitizedUrl && (
+                {sanitizedRoasterUrl && (
                   <Link
-                    href={sanitizedUrl}
+                    href={sanitizedRoasterUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-400 hover:text-gray-600"

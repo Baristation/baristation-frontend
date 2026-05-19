@@ -2,7 +2,7 @@
 
 import { RangeSlider, Tooltip } from '@coffee-service/ui-library';
 import { motion } from 'framer-motion';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Flame } from 'lucide-react';
 import React from 'react';
 
 import { FLAVOR_DEFINITIONS, FlavorType, ProductFilterState } from '@/lib/api/products';
@@ -14,20 +14,23 @@ export const SECTION_TITLE =
  * 향미 선택 섹션
  */
 interface FlavorFilterProps {
-  selectedFlavors: FlavorType[];
+  selectedFlavor: FlavorType | null;
   onToggle: (flavor: FlavorType) => void;
 }
 
-export function FlavorFilter({ selectedFlavors, onToggle }: FlavorFilterProps) {
+export function FlavorFilter({ selectedFlavor, onToggle }: FlavorFilterProps) {
   return (
     <div className="py-2">
-      <p className={SECTION_TITLE}>Flavor</p>
+      <p className={SECTION_TITLE}>향미</p>
       <div className="grid grid-cols-5 gap-2 md:grid-cols-4">
         {FLAVOR_DEFINITIONS.map((def) => {
-          const active = selectedFlavors.includes(def.id);
+          const active = selectedFlavor === def.id;
           return (
             <Tooltip key={def.id} content={def.ko}>
               <motion.button
+                type="button"
+                aria-pressed={active}
+                aria-label={def.ko}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onToggle(def.id)}
@@ -65,29 +68,113 @@ export function MetricFilter({
   label,
   icon: Icon,
   value,
-  min = 1,
+  min = 0,
   max = 5,
   step = 1,
   colorPalette = 'amber',
   onChange,
 }: MetricFilterProps) {
   return (
-    <div className="py-3">
-      <p className="font-outfit mb-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+    <div className="py-2.5">
+      <p className="font-outfit mb-2 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
         <Icon className="h-3 w-3" />
         {label}
       </p>
-      <RangeSlider
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        colorPalette={colorPalette}
-        onValueChange={(v) => onChange([v[0], v[1]])}
-      />
-      <div className="mt-1.5 flex justify-between px-0.5 text-[10px] font-medium text-gray-400">
-        <span>{value[0]}</span>
-        <span>{value[1]}</span>
+      <div className="flex items-center gap-3">
+        <span className="w-3 text-center text-[10px] font-medium text-gray-400">{value[0]}</span>
+        <div className="flex-1">
+          <RangeSlider
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            colorPalette={colorPalette}
+            onValueChange={(v) => onChange([v[0], v[1]])}
+          />
+        </div>
+        <span className="w-3 text-center text-[10px] font-medium text-gray-400">{value[1]}</span>
+      </div>
+    </div>
+  );
+}
+
+/** 로스팅 단계 정의 상수 */
+export const ROASTING_STAGES = [
+  {
+    id: 'LIGHT',
+    ko: '라이트',
+    en: 'Light',
+    color: '#D4A373',
+    tooltip: '라이트 로스팅 (Soft Blonde/Tan)',
+  },
+  {
+    id: 'MEDIUMLIGHT',
+    ko: '미디엄 라이트',
+    en: 'Medium Light',
+    color: '#A98467',
+    tooltip: '미디엄 라이트 (Warm Amber)',
+  },
+  {
+    id: 'MEDIUM',
+    ko: '미디엄',
+    en: 'Medium',
+    color: '#8C5E3C',
+    tooltip: '미디엄 로스팅 (Classic Brown)',
+  },
+  {
+    id: 'MEDIUMDARK',
+    ko: '미디엄 다크',
+    en: 'Medium Dark',
+    color: '#6F4E37',
+    tooltip: '미디엄 다크 (Rich Espresso)',
+  },
+  {
+    id: 'DARK',
+    ko: '다크',
+    en: 'Dark',
+    color: '#3F2305',
+    tooltip: '다크 로스팅 (Deep Dark Chocolate)',
+  },
+] as const;
+
+/**
+ * 로스팅 필터 (5가지 단계 버튼 선택)
+ */
+interface RoastingFilterProps {
+  value: string | null; // LIGHT | MEDIUMLIGHT | MEDIUM | MEDIUMDARK | DARK | null (null 이면 all)
+  onChange: (value: string | null) => void;
+}
+
+export function RoastingFilter({ value, onChange }: RoastingFilterProps) {
+  return (
+    <div className="py-3">
+      <p className="font-outfit mb-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+        <Flame className="h-3 w-3" />
+        로스팅
+      </p>
+      <div className="flex items-center gap-2">
+        {/* 5가지 단계 버튼 */}
+        {ROASTING_STAGES.map((stage) => {
+          const active = value === stage.id;
+          return (
+            <Tooltip key={stage.id} content={stage.tooltip}>
+              <motion.button
+                type="button"
+                aria-pressed={active}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onChange(active ? null : stage.id)}
+                style={{ backgroundColor: stage.color }}
+                className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all ${
+                  active
+                    ? 'scale-105 border-white ring-2 ring-amber-500 ring-offset-2'
+                    : 'border-transparent hover:border-gray-300'
+                }`}
+                aria-label={stage.ko}
+              />
+            </Tooltip>
+          );
+        })}
       </div>
     </div>
   );
@@ -97,14 +184,13 @@ export function MetricFilter({
  * 필터 적용 여부 확인 유틸리티
  */
 export const isFiltered = (filters: ProductFilterState) =>
-  filters.flavors.length > 0 ||
-  filters.flavor.balance[0] !== 1 ||
+  filters.flavorCategory !== null ||
+  filters.flavor.balance[0] !== 0 ||
   filters.flavor.balance[1] !== 5 ||
-  filters.flavor.sweetness[0] !== 1 ||
+  filters.flavor.sweetness[0] !== 0 ||
   filters.flavor.sweetness[1] !== 5 ||
-  filters.flavor.acidity[0] !== 1 ||
+  filters.flavor.acidity[0] !== 0 ||
   filters.flavor.acidity[1] !== 5 ||
-  filters.body[0] !== 1 ||
+  filters.body[0] !== 0 ||
   filters.body[1] !== 5 ||
-  filters.roasting[0] !== 1 ||
-  filters.roasting[1] !== 5;
+  filters.roasting !== null;
