@@ -74,7 +74,7 @@
 **Props**:
 
 ```ts
-type DifficultyType = '전체' | '입문' | '중급' | '전문가';
+type DifficultyType = '전체' | '입문' | '중급' | '고급';
 
 interface ClassFilterState {
   region: string | null;
@@ -153,7 +153,7 @@ interface LessonSummary {
   lessonImageUrl: string;
   title: string;
   subTitle: string;
-  difficulty: '입문' | '중급' | '전문가';
+  difficulty: '입문' | '중급' | '고급';
   hostName: string;
   hostProfileUrl: string;
   region: string;
@@ -238,7 +238,7 @@ interface ClassCardProps {
   lessonImageUrl: string;
   title: string;
   subTitle: string;
-  difficulty: '입문' | '중급' | '전문가';
+  difficulty: '입문' | '중급' | '고급';
   hostName: string;
   hostProfileUrl: string;
   region: string;
@@ -261,7 +261,7 @@ interface ClassCardProps {
 
 1. `lessonImageUrl`을 카드 전체 배경으로 사용한다 (`fill`, `object-cover`)
 2. 이미지 좌상단에 **바리스타 프로필 이미지**(원형, 32×32px)와 **이름**을 오버레이로 표시한다
-3. 이미지 우상단에 **난이도 배지**(`입문` / `중급` / `전문가`)를 표시한다
+3. 이미지 우상단에 **난이도 배지**(`입문` / `중급` / `고급`)를 표시한다
 4. 하단 50% 영역에 `black/80 → transparent` 그라데이션을 적용하여 텍스트 가독성을 확보한다
 5. 텍스트 영역(좌측 하단)에 클래스 제목, 장소(`MapPin` 아이콘 + `city · place`), 다음 일정(`CalendarDays` 아이콘), 가격을 순서대로 배치한다
 6. `nextDate`가 null인 경우 "일정 미정"으로 표시한다
@@ -274,7 +274,7 @@ interface ClassCardProps {
 - **Difficulty Badge**:
   - `입문`: `bg-emerald-500/80 text-white`
   - `중급`: `bg-amber-500/80 text-white`
-  - `전문가`: `bg-rose-500/80 text-white`
+  - `고급`: `bg-rose-500/80 text-white`
   - 공통: `rounded-full px-3 py-1 text-xs font-semibold backdrop-blur-sm`
 - **Host Profile**: `rounded-full ring-2 ring-white/50 w-8 h-8 object-cover`
 - **Typography**:
@@ -341,7 +341,7 @@ GET /api/lesson/search
 | Parameter    | Type     | Description                    | 필수 |
 | ------------ | -------- | ------------------------------ | ---- |
 | `region`     | `string` | 지역 필터 (예: "서울", "부산") | ✗    |
-| `difficulty` | `string` | 난이도 Enum (입문/중급/전문가) | ✗    |
+| `difficulty` | `string` | 난이도 Enum (입문/중급/고급)   | ✗    |
 | `keyword`    | `string` | 통합 검색 키워드               | ✗    |
 | `page`       | `number` | 페이지 번호 (0부터 시작)       | ✗    |
 | `size`       | `number` | 페이지 당 항목 수 (기본 9)     | ✗    |

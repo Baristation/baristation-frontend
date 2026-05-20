@@ -7,21 +7,25 @@ import { searchLessonsAction } from '@/actions/lesson.action';
 import { ClassCardList } from '@/components/class/ClassCardList';
 import { ClassFilterBar, ClassFilterState } from '@/components/class/ClassFilterBar';
 import PageContainer from '@/components/layout/PageContainer';
-import { availableRegions } from '@/lib/mocks/class';
+
+const availableRegions = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '경기'];
 
 export default function ClassPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<ClassFilterState>({
     region: null,
     difficulty: '전체',
+    lessonCategory: '전체',
   });
 
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['lessons', filters, searchQuery],
     queryFn: async ({ pageParam = 0 }) => {
       const result = await searchLessonsAction({
-        ...filters,
+        region: filters.region,
         difficulty: filters.difficulty === '전체' ? undefined : filters.difficulty,
+        category: filters.lessonCategory === '전체' ? undefined : filters.lessonCategory,
+        keyword: searchQuery || undefined,
         page: pageParam,
       });
       if (!result.success || !result.data) {
@@ -37,7 +41,7 @@ export default function ClassPage() {
   const lessons = data?.pages.flatMap((page) => page?.content ?? []) ?? [];
 
   const handleResetFilters = () => {
-    setFilters({ region: null, difficulty: '전체' });
+    setFilters({ region: null, difficulty: '전체', lessonCategory: '전체' });
     setSearchQuery('');
   };
 
@@ -62,7 +66,6 @@ export default function ClassPage() {
               onChangeFilters={setFilters}
               searchQuery={searchQuery}
               onChangeSearch={setSearchQuery}
-              onSearchSubmit={() => {}} // Search is already debounced, button can just exist or perform any explicit action if needed
               availableRegions={availableRegions}
             />
           </section>

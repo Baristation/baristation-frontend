@@ -11,11 +11,14 @@ export interface LessonSummary {
   nextDate: string | null;
   price: number;
   difficulty: string;
+  lessonCategory?: string;
 }
 
 export interface LessonSearchRequest {
   region?: string | null;
   difficulty?: string;
+  category?: string;
+  keyword?: string;
   page?: number;
   size?: number;
 }

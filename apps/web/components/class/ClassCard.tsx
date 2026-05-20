@@ -10,7 +10,7 @@ import type { LessonSummary } from '@/lib/api/lessons';
 const DIFFICULTY_STYLE: Record<string, string> = {
   입문: 'bg-[#F2D49B] text-amber-900', // Caramel
   중급: 'bg-[#E8C5C0] text-rose-900', // Wine
-  전문가: 'bg-[#D0CEC8] text-gray-800', // Smoky
+  고급: 'bg-[#D0CEC8] text-gray-800', // Smoky
 };
 
 function formatDate(dateStr: string | null) {
@@ -39,6 +39,7 @@ export function ClassCard({
   title,
   subTitle,
   difficulty,
+  lessonCategory,
   hostName,
   hostProfileUrl,
   city,
@@ -66,19 +67,19 @@ export function ClassCard({
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             priority={index < 4}
           />
-          {/* Difficulty Tag */}
-          <div className="absolute bottom-3 left-3">
+          {/* Tags */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+            {lessonCategory && (
+              <span className="rounded-md bg-white/95 px-2.5 py-1 text-[10px] font-bold text-gray-800 shadow-sm backdrop-blur-sm">
+                {lessonCategory}
+              </span>
+            )}
             <span
-              className={`font-outfit rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
+              className={`rounded-md px-2.5 py-1 text-[10px] font-bold tracking-wider ${
                 DIFFICULTY_STYLE[difficulty] ?? 'bg-gray-200 text-gray-800'
               }`}
             >
-              DIFFICULTY:{' '}
-              {difficulty === '입문'
-                ? 'BEGINNER'
-                : difficulty === '중급'
-                  ? 'INTERMEDIATE'
-                  : 'EXPERT'}
+              {difficulty}
             </span>
           </div>
         </div>
