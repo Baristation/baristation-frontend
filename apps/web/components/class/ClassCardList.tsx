@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, SearchX } from 'lucide-react';
 
-import type { LessonSummary } from '@/lib/mocks/class';
+import type { LessonSummary } from '@/lib/api/lessons';
 
 import { ClassCard } from './ClassCard';
 

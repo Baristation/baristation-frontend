@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useCallback } from 'react';
 
-import type { LessonImage } from '@/lib/mocks/classDetail';
+import type { LessonImage } from '@/lib/api/lessons';
 
 interface LessonImageGalleryProps {
   images: LessonImage[];

@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 
-import type { CurriculumItem } from '@/lib/mocks/classDetail';
+import type { CurriculumItem } from '@/lib/api/lessons';
 
 interface CurriculumSectionProps {
   curriculum: CurriculumItem[];

@@ -3,10 +3,11 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
+import { searchLessonsAction } from '@/actions/lesson.action';
 import { ClassCardList } from '@/components/class/ClassCardList';
 import { ClassFilterBar, ClassFilterState } from '@/components/class/ClassFilterBar';
 import PageContainer from '@/components/layout/PageContainer';
-import { fetchLessons, availableRegions } from '@/lib/mocks/class';
+import { availableRegions } from '@/lib/mocks/class';
 
 export default function ClassPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,14 +18,23 @@ export default function ClassPage() {
 
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['lessons', filters, searchQuery],
-    queryFn: ({ pageParam = 0 }) =>
-      fetchLessons({ ...filters, keyword: searchQuery, page: pageParam }),
+    queryFn: async ({ pageParam = 0 }) => {
+      const result = await searchLessonsAction({
+        ...filters,
+        difficulty: filters.difficulty === '전체' ? undefined : filters.difficulty,
+        page: pageParam,
+      });
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch lessons');
+      }
+      return result.data;
+    },
     getNextPageParam: (lastPage) =>
-      lastPage.data.page.hasNext ? lastPage.data.page.number + 1 : undefined,
+      lastPage?.page?.hasNext ? lastPage.page.number + 1 : undefined,
     initialPageParam: 0,
   });
 
-  const lessons = data?.pages.flatMap((page) => page.data.content) ?? [];
+  const lessons = data?.pages.flatMap((page) => page?.content ?? []) ?? [];
 
   const handleResetFilters = () => {
     setFilters({ region: null, difficulty: '전체' });

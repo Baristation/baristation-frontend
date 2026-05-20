@@ -5,7 +5,7 @@ import { Star, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import type { LessonSummary } from '@/lib/mocks/class';
+import type { LessonSummary } from '@/lib/api/lessons';
 
 const DIFFICULTY_STYLE: Record<string, string> = {
   입문: 'bg-[#F2D49B] text-amber-900', // Caramel

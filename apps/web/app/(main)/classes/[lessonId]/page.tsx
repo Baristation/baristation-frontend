@@ -3,6 +3,7 @@
 import { Loader2, Star } from 'lucide-react';
 import { useState, useEffect, use } from 'react';
 
+import { getLessonDetailAction } from '@/actions/lesson.action';
 import { BookingSidebar } from '@/components/class/detail/BookingSidebar';
 import { CurriculumSection } from '@/components/class/detail/CurriculumSection';
 import { HostCard } from '@/components/class/detail/HostCard';
@@ -10,7 +11,7 @@ import { LessonImageGallery } from '@/components/class/detail/LessonImageGallery
 import { QuickInfoGrid } from '@/components/class/detail/QuickInfoGrid';
 import { RefundPolicySection } from '@/components/class/detail/RefundPolicySection';
 import PageContainer from '@/components/layout/PageContainer';
-import { fetchLessonDetail, type LessonDetailResponse } from '@/lib/mocks/classDetail';
+import { LessonDetailResponse } from '@/lib/api/lessons';
 
 interface ClassDetailPageProps {
   params: Promise<{
@@ -33,8 +34,12 @@ export default function ClassDetailPage(props: ClassDetailPageProps) {
     async function loadData() {
       try {
         setIsLoading(true);
-        const res = await fetchLessonDetail(lessonId);
-        setData(res.data);
+        const res = await getLessonDetailAction(lessonId);
+        if (res.success && res.data) {
+          setData(res.data);
+        } else {
+          setError(res.error || '클래스 정보를 불러올 수 없습니다.');
+        }
       } catch (err) {
         setError('클래스 정보를 불러올 수 없습니다.');
       } finally {
