@@ -119,8 +119,15 @@ export default function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden items-center space-x-4 md:flex">
-          <Button variant="ghost" size="icon" aria-label="저장된 원두 및 클래스 북마크 보기">
-            <Bookmark className="h-5 w-5" />
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            aria-label="저장된 원두 및 클래스 북마크 보기"
+          >
+            <Link href="/bookmark">
+              <Bookmark className="h-5 w-5" />
+            </Link>
           </Button>
 
           {isAuthenticated ? (

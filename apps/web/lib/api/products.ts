@@ -210,6 +210,7 @@ export interface ProductInfo {
   /** 산미 1~5 */
   acidity: number;
   link: string;
+  isBookmarked?: boolean;
   /** 상세 추가 정보 */
   description?: string; // 원두 소개
   roastery?: string; // 로스터리 명
