@@ -60,7 +60,8 @@ export function QuickInfoGrid({ region, city, place, duration, nextDate }: Quick
       <InfoCell
         icon={<Clock className="h-5 w-5" />}
         label="소요 시간"
-        value={formatDuration(duration)}
+        // value={formatDuration(duration)}
+        value={`${duration}분`}
       />
       <InfoCell
         icon={<CalendarDays className="h-5 w-5" />}

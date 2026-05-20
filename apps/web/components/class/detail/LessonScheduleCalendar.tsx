@@ -134,7 +134,7 @@ export function LessonScheduleCalendar({
                         : 'text-emerald-600'
                   }`}
                 >
-                  {remainingSeats === 0 ? '마감' : `${remainingSeats}석`}
+                  {/* {remainingSeats === 0 ? '마감' : `${remainingSeats}석`} */}
                 </span>
               )}
             </div>

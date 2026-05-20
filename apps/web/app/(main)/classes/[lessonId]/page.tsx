@@ -28,7 +28,6 @@ export default function ClassDetailPage(props: ClassDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -90,10 +89,11 @@ export default function ClassDetailPage(props: ClassDetailPageProps) {
             <section className="flex flex-col gap-6">
               <div className="mb-2 flex items-center gap-2">
                 <span className="font-outfit rounded-full bg-[#F5E6E3] px-3 py-1 text-xs font-bold tracking-wider text-[#A54729] uppercase">
-                  MASTERCLASS
+                  {data.lessonCategory}
                 </span>
                 <span className="font-outfit rounded-full bg-gray-200 px-3 py-1 text-xs font-bold tracking-wider text-gray-700 uppercase">
-                  LEVEL 01
+                  난이도는 몰라용
+                  {/* {data.difficulty ?? '알 수 없음'} */}
                 </span>
               </div>
               <h1 className="font-playfair text-3xl leading-tight font-bold text-gray-900 md:text-4xl lg:text-5xl">
